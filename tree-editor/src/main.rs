@@ -1,28 +1,52 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, borrow::BorrowMut, ops::Range};
+use sha256::{self, digest};
 
+type Sha256 = [char; 32];
+
+#[derive(Clone, Copy)]
 struct Geometry {
     width: i32, height: i32,
     x_off: i32, y_off: i32,
 }
 
+#[derive(Clone, Copy)]
 enum Action {
     Crop(Geometry),
-    Annotate(Geometry, String)
+    Monochrome
+}
+
+impl Action {
+    fn hash(self) -> String {
+        match self {
+            Self::Crop(Geometry) => String::from("aaa"),
+            Self::Monochrome => String::from("bbb")
+        }
+    }
 }
 
 enum Node {
-    Commit()
-}
-
-struct Node {
-    pub parent: Rc<RefCell<Node>>,
-    pub action: Action,
-    pub hash: String
+    Commit(Rc<RefCell<Node>>, Action, Sha256),
+    Image(Sha256)
 }
 
 impl Node {
-    fn new(prev: &Node, action: Action) {
-        
+    fn new(prev: &Node, action: Action) -> Node {
+        let copy = action.hash();
+        let sha256 = match prev {
+            Self::Commit(_, _, sha256) => {
+                let s: String = sha256.iter().collect();
+                digest(s.as_str())
+            },
+            Self::Image(sha256) => {
+                let s: String = sha256.iter().collect();
+                digest(s.as_str())
+            }
+        };
+        let mut ret_sha = [' '; 32];
+        for i in 0..32 {
+            ret_sha[i] =  sha256.as_bytes()[i] as char;
+        }
+        Node::Commit(Rc::new(RefCell::clone(prev)), action, ret_sha)
     }
 }
 
