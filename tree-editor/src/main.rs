@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, borrow::BorrowMut, ops::Range};
+use std::{cell::RefCell, rc::Rc, borrow::{BorrowMut, Borrow}, ops::Range};
 use sha256::{self, digest};
 
 type Sha256 = [char; 32];
@@ -30,9 +30,23 @@ enum Node {
 }
 
 impl Node {
-    fn new(prev: &Node, action: Action) -> Node {
+    fn hash(self) -> String {
+        match self {
+            Self::Commit(_, _, sha256) => {
+                let s: String = sha256.iter().collect();
+                digest(s.as_str())
+            },
+            Self::Image(sha256) => {
+                let s: String = sha256.iter().collect();
+                digest(s.as_str())
+            }
+        }
+    }
+
+    fn new(prev: Rc<RefCell<Node>>, action: Action) -> Node {
         let copy = action.hash();
-        let sha256 = match prev {
+        let b = prev.borrow();
+        let sha256 = match b {
             Self::Commit(_, _, sha256) => {
                 let s: String = sha256.iter().collect();
                 digest(s.as_str())
@@ -46,7 +60,7 @@ impl Node {
         for i in 0..32 {
             ret_sha[i] =  sha256.as_bytes()[i] as char;
         }
-        Node::Commit(Rc::new(RefCell::clone(prev)), action, ret_sha)
+        Node::Commit(prev, action, ret_sha)
     }
 }
 
