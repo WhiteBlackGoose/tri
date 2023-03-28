@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, borrow::{BorrowMut, Borrow}, ops::Range, hash::Hash, process::Command};
+use std::{cell::RefCell, rc::Rc, borrow::{BorrowMut, Borrow}, ops::Range, hash::Hash, process::Command, fs::File, iter::Enumerate};
 use sha256::{self, digest};
 
 type Sha256 = [char; 32];
@@ -9,6 +9,20 @@ type Image = i32;
 struct Geometry {
     width: i32, height: i32,
     x_off: i32, y_off: i32,
+}
+
+impl Geometry {
+    fn to_magick(&self) -> String {
+        let mut res = String::new();
+        res.push_str(self.width.to_string().as_str());
+        res.push('x');
+        res.push_str(self.height.to_string().as_str());
+        res.push('+');
+        res.push_str(self.x_off.to_string().as_str());
+        res.push('x');
+        res.push_str(self.y_off.to_string().as_str());
+        res
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -28,9 +42,12 @@ impl Action {
 
 fn magick(args: &Vec<String>) {
     let mut cmd = Command::new("convert");
+    print!("Inv: ");
     for arg in args {
         cmd.arg(arg);
+        print!("{arg} ");
     }
+    println!("");
     cmd.arg("out.png");
     cmd.output().expect("Ohno");
 }
@@ -75,13 +92,19 @@ impl Node {
         }
     }
 
-    fn apply(&self, path: &str) -> Result<Image, String> {
+    fn apply(&self, path: &str, out: &str) -> Result<Image, String> {
+        std::fs::copy(path, out);
         let mut actions = vec![];
         let img = self.collect_actions(&mut actions);
-        for action in actions {
+        actions.reverse();
+        for (i, action) in actions.iter().enumerate() {
             match action {
                 Action::Monochrome => {
-                    let v = vec![String::from(path), String::from("-monochrome")];
+                    let v = vec![String::from(out), String::from("-monochrome"), String::from(out)];
+                    magick(&v)
+                },
+                Action::Crop(geo) => {
+                    let v = vec![String::from(out), String::from("-crop"), geo.to_magick(), String::from(out)];
                     magick(&v)
                 },
                 _ => panic!("sdfd")
@@ -92,7 +115,8 @@ impl Node {
 }
 
 fn main() {
-    let img = Node::Image(0, ['s'; 32]);
-    let c1 = Node::new(Box::new(img), Action::Monochrome);
-    c1.apply("/home/goose/Pictures/meme-turing.png").expect("");
+    let c = Node::Image(0, ['s'; 32]);
+    // let c = Node::new(Box::new(c), Action::Monochrome);
+    let c = Node::new(Box::new(c), Action::Crop(Geometry { width: 400, height: 400, x_off: 300, y_off: 0 }));
+    c.apply("/home/goose/Pictures/meme-turing.png", "out.png").expect("");
 }
