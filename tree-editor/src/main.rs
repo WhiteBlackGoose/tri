@@ -1,9 +1,35 @@
-use std::{cell::RefCell, rc::Rc, borrow::{BorrowMut, Borrow}, ops::Range, hash::Hash, process::Command, fs::File, iter::Enumerate};
-use sha256::{self, digest};
+use std::{cell::RefCell, rc::Rc, borrow::{BorrowMut, Borrow}, ops::Range, process::Command, fs::{File, self}, iter::Enumerate, path::Path};
+use sha256::{self, digest, digest_file, try_digest};
 
 type Sha256 = [char; 32];
 
-type Image = i32;
+struct Hash {
+    pub sha256: [char; 32],
+}
+
+impl Hash {
+    fn new(path: &str) -> Hash {
+        let r: Sha256 = [' '; 32];
+        let sha = sha256::try_digest(Path::new(path)).expect("Problems computing hash");
+        for i in 0..32 {
+            r[i] = sha.as_bytes()[i] as char;
+        }
+        Hash { sha256: r }
+    }
+    fn eq(&self, other: &Hash) -> bool {
+    }
+}
+
+
+fn hasheq(h1: &Sha256, h2: &Sha256) -> bool {
+// fn eq(h1: &[char; 32], h2: &[char; 32]) -> bool {
+    for (a, b) in h1.iter().zip(h2) {
+        if a != b {
+            return false;
+        }
+    }
+    true
+}
 
 #[derive(Clone, Copy)]
 struct Geometry {
@@ -54,7 +80,7 @@ fn magick(args: &Vec<String>) {
 
 enum Node {
     Commit(Box<Node>, Action, Sha256),
-    Image(Image, Sha256)
+    Image(Sha256)
 }
 
 impl Node {
@@ -62,37 +88,37 @@ impl Node {
         match self {
             Self::Commit(_, _, sha256) => {
                 let s: String = sha256.iter().collect();
-                digest(s.as_str())
+                s
             },
-            Self::Image(_, sha256) => {
+            Self::Image(sha256) => {
                 let s: String = sha256.iter().collect();
-                digest(s.as_str())
+                s
             }
         }
     }
 
     fn new(prev: Box<Node>, action: Action) -> Node {
-        let copy = action.hash();
         let b: &Node = prev.borrow();
         let mut ret_sha = [' '; 32];
-        for i in 0..32 {
-            ret_sha[i] =  b.hash().as_bytes()[i] as char;
-        }
         Node::Commit(prev, action, ret_sha)
     }
 
-    fn collect_actions(&self, actions: &mut Vec<Action>) -> Image {
+    fn materialize(&self, path: &str) -> Sha256 {
         match self {
-            Node::Image(img, _) => img.clone(),
+            Node::Image(hash) => {
+                let h = chash(path);
+                if !hasheq(&h, hash) {
+                    panic!("Expected: {hash}. Actual: {h}");
+                }
+                fs::copy(path, to)
+                hash
+            },
             Node::Commit(prev, action, _) => {
                 actions.push(action.clone());
                 let prevb: &Node = prev.borrow();
                 prevb.collect_actions(actions)
             }
         }
-    }
-
-    fn apply(&self, path: &str, out: &str) -> Result<Image, String> {
         std::fs::copy(path, out);
         let mut actions = vec![];
         let img = self.collect_actions(&mut actions);
