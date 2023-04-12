@@ -1,30 +1,30 @@
 use std::{cell::RefCell, rc::Rc, borrow::{BorrowMut, Borrow}, ops::Range, process::Command, fs::{File, self}, iter::Enumerate, path::{Path, PathBuf}, fmt::{Display, Write}};
 use sha256::{self, digest, digest_file, try_digest};
 
-type Sha256 = [char; 32];
+type Sha256 = [u8; 32];
 
 const INTER_STEPS_PATH: &str = "inter";
 
 #[derive(Clone, Copy)]
 struct Hash {
-    pub sha256: [char; 32],
+    pub sha256: Sha256,
 }
 
 impl Hash {
     fn new(path: &Path) -> Hash {
-        let r: Sha256 = [' '; 32];
+        let mut r: Sha256 = [0; 32];
         let sha = sha256::try_digest(path).expect("Problems computing hash");
         for i in 0..32 {
-            r[i] = sha.as_bytes()[i] as char;
+            r[i] = sha.as_bytes()[i];
         }
         Hash { sha256: r }
     }
 
     fn from_string(sha: String) -> Hash {
         assert_eq!(sha.len(), 32);
-        let mut r: Sha256 = [' '; 32];
+        let mut r: Sha256 = [0; 32];
         for i in 0..32 {
-            r[i] = sha.as_bytes()[i] as char;
+            r[i] = sha.as_bytes()[i];
         }
         Hash { sha256: r }
     }
@@ -42,7 +42,7 @@ impl Hash {
 impl Display for Hash {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for c in self.sha256 {
-            f.write_char(c);
+            f.write_char(c as char);
         }
         Ok(())
     }
@@ -102,21 +102,20 @@ enum Node {
 }
 
 impl Node {
-    fn hash(&self) -> String {
-        match self {
-            Self::Commit(_, _, hash) => {
-                let s: String = hash.sha256.iter().collect();
-                s
-            },
-            Self::Image(hash) => {
-                let s: String = hash.sha256.iter().collect();
-                s
-            }
-        }
-    }
+    // fn hash(&self) -> String {
+    //     match self {
+    //         Self::Commit(_, _, hash) => {
+    //             let s: String = hash.sha256.iter().collect();
+    //             s
+    //         },
+    //         Self::Image(hash) => {
+    //             let s: String = hash.sha256.iter().collect();
+    //             s
+    //         }
+    //     }
+    // }
 
     fn new(prev: Box<Node>, action: Action, hash: Hash) -> Node {
-        let b: &Node = prev.borrow();
         Node::Commit(prev, action, hash)
     }
 
@@ -133,14 +132,16 @@ impl Node {
             Node::Commit(prev, action, _) => {
                 let prev = prev.materialize(path);
                 let out = Path::new(INTER_STEPS_PATH).join("tmp.png");
-                let out_path = out.into_os_string().into_string().unwrap();
+                let out_path = out.clone().into_os_string().into_string().unwrap();
+                let inw = Path::new(INTER_STEPS_PATH).join(format!("{}.png", prev));
+                let in_path = inw.clone().into_os_string().into_string().unwrap();
                 match action {
                     Action::Monochrome => {
-                        let v = vec![out_path, String::from("-monochrome"), out_path];
+                        let v = vec![in_path.clone(), String::from("-monochrome"), out_path.clone()];
                         magick(&v);
                     },
                     Action::Crop(geo) => {
-                        let v = vec![out_path, String::from("-crop"), geo.to_magick(), out_path];
+                        let v = vec![in_path.clone(), String::from("-crop"), geo.to_magick(), out_path.clone()];
                         magick(&v);
                     },
                     _ => panic!("sdfd")
@@ -152,8 +153,10 @@ impl Node {
 }
 
 fn main() {
-    let c = Node::Image(['s'; 32]);
+    let c = Node::Image(Hash::from_string(String::from("12345678901234567890123456789012")));
     // let c = Node::new(Box::new(c), Action::Monochrome);
-    let c = Node::new(Box::new(c), Action::Crop(Geometry { width: 400, height: 400, x_off: 300, y_off: 0 }));
-    c.materialize("/home/goose/Pictures/meme-turing.png");
+    let c = Node::new(Box::new(c),
+        Action::Crop(Geometry { width: 400, height: 400, x_off: 300, y_off: 0 }), 
+        Hash::from_string(String::from("12345678901234567890123456789012")));
+    c.materialize(Path::new("/home/goose/Pictures/meme-turing.png"));
 }
