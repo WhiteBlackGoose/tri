@@ -1,1 +1,7 @@
 tree-editor/target
+
+# IDE-specific
+/.idea
+
+*.png
+*.jpg
