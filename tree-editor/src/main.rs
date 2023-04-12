@@ -1,35 +1,53 @@
-use std::{cell::RefCell, rc::Rc, borrow::{BorrowMut, Borrow}, ops::Range, process::Command, fs::{File, self}, iter::Enumerate, path::Path};
+use std::{cell::RefCell, rc::Rc, borrow::{BorrowMut, Borrow}, ops::Range, process::Command, fs::{File, self}, iter::Enumerate, path::{Path, PathBuf}, fmt::{Display, Write}};
 use sha256::{self, digest, digest_file, try_digest};
 
 type Sha256 = [char; 32];
 
+const INTER_STEPS_PATH: &str = "inter";
+
+#[derive(Clone, Copy)]
 struct Hash {
     pub sha256: [char; 32],
 }
 
 impl Hash {
-    fn new(path: &str) -> Hash {
+    fn new(path: &Path) -> Hash {
         let r: Sha256 = [' '; 32];
-        let sha = sha256::try_digest(Path::new(path)).expect("Problems computing hash");
+        let sha = sha256::try_digest(path).expect("Problems computing hash");
         for i in 0..32 {
             r[i] = sha.as_bytes()[i] as char;
         }
         Hash { sha256: r }
     }
-    fn eq(&self, other: &Hash) -> bool {
-    }
-}
 
-
-fn hasheq(h1: &Sha256, h2: &Sha256) -> bool {
-// fn eq(h1: &[char; 32], h2: &[char; 32]) -> bool {
-    for (a, b) in h1.iter().zip(h2) {
-        if a != b {
-            return false;
+    fn from_string(sha: String) -> Hash {
+        assert_eq!(sha.len(), 32);
+        let mut r: Sha256 = [' '; 32];
+        for i in 0..32 {
+            r[i] = sha.as_bytes()[i] as char;
         }
+        Hash { sha256: r }
     }
-    true
+
+    fn eq(&self, other: &Hash) -> bool {
+        for (a, b) in self.sha256.iter().zip(other.sha256) {
+            if *a != b {
+                return false;
+            }
+        }
+        true
+    }
 }
+
+impl Display for Hash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for c in self.sha256 {
+            f.write_char(c);
+        }
+        Ok(())
+    }
+}
+
 
 #[derive(Clone, Copy)]
 struct Geometry {
@@ -79,70 +97,63 @@ fn magick(args: &Vec<String>) {
 }
 
 enum Node {
-    Commit(Box<Node>, Action, Sha256),
-    Image(Sha256)
+    Commit(Box<Node>, Action, Hash),
+    Image(Hash)
 }
 
 impl Node {
     fn hash(&self) -> String {
         match self {
-            Self::Commit(_, _, sha256) => {
-                let s: String = sha256.iter().collect();
+            Self::Commit(_, _, hash) => {
+                let s: String = hash.sha256.iter().collect();
                 s
             },
-            Self::Image(sha256) => {
-                let s: String = sha256.iter().collect();
+            Self::Image(hash) => {
+                let s: String = hash.sha256.iter().collect();
                 s
             }
         }
     }
 
-    fn new(prev: Box<Node>, action: Action) -> Node {
+    fn new(prev: Box<Node>, action: Action, hash: Hash) -> Node {
         let b: &Node = prev.borrow();
-        let mut ret_sha = [' '; 32];
-        Node::Commit(prev, action, ret_sha)
+        Node::Commit(prev, action, hash)
     }
 
-    fn materialize(&self, path: &str) -> Sha256 {
+    fn materialize(&self, path: &Path) -> Hash {
         match self {
             Node::Image(hash) => {
-                let h = chash(path);
-                if !hasheq(&h, hash) {
+                let h = Hash::new(path);
+                if !h.eq(hash) {
                     panic!("Expected: {hash}. Actual: {h}");
                 }
-                fs::copy(path, to)
-                hash
+                fs::copy(path, Path::new(INTER_STEPS_PATH).join("{hash}.png"));
+                hash.clone()
             },
             Node::Commit(prev, action, _) => {
-                actions.push(action.clone());
-                let prevb: &Node = prev.borrow();
-                prevb.collect_actions(actions)
+                let prev = prev.materialize(path);
+                let out = Path::new(INTER_STEPS_PATH).join("tmp.png");
+                let out_path = out.into_os_string().into_string().unwrap();
+                match action {
+                    Action::Monochrome => {
+                        let v = vec![out_path, String::from("-monochrome"), out_path];
+                        magick(&v);
+                    },
+                    Action::Crop(geo) => {
+                        let v = vec![out_path, String::from("-crop"), geo.to_magick(), out_path];
+                        magick(&v);
+                    },
+                    _ => panic!("sdfd")
+                };
+                Hash::new(out.as_path())
             }
         }
-        std::fs::copy(path, out);
-        let mut actions = vec![];
-        let img = self.collect_actions(&mut actions);
-        actions.reverse();
-        for (i, action) in actions.iter().enumerate() {
-            match action {
-                Action::Monochrome => {
-                    let v = vec![String::from(out), String::from("-monochrome"), String::from(out)];
-                    magick(&v)
-                },
-                Action::Crop(geo) => {
-                    let v = vec![String::from(out), String::from("-crop"), geo.to_magick(), String::from(out)];
-                    magick(&v)
-                },
-                _ => panic!("sdfd")
-            }
-        }
-        Ok(img)
     }
 }
 
 fn main() {
-    let c = Node::Image(0, ['s'; 32]);
+    let c = Node::Image(['s'; 32]);
     // let c = Node::new(Box::new(c), Action::Monochrome);
     let c = Node::new(Box::new(c), Action::Crop(Geometry { width: 400, height: 400, x_off: 300, y_off: 0 }));
-    c.apply("/home/goose/Pictures/meme-turing.png", "out.png").expect("");
+    c.materialize("/home/goose/Pictures/meme-turing.png");
 }
