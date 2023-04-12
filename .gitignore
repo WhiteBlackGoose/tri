@@ -1,2 +1,5 @@
 tree-editor/target
 tree-editor/inter
+/.idea
+*.png
+*.jpg
