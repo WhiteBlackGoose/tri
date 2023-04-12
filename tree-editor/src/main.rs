@@ -93,8 +93,13 @@ fn magick(args: &Vec<String>) {
         print!("{arg} ");
     }
     println!("");
-    cmd.arg("out.png");
     cmd.output().expect("Ohno");
+}
+
+fn hash_verify(expected: &Hash, actual: &Hash) {
+    if !expected.eq(actual) {
+        panic!("Expected: {expected}. Actual: {actual}");
+    }
 }
 
 enum Node {
@@ -124,13 +129,11 @@ impl Node {
         match self {
             Node::Image(hash) => {
                 let h = Hash::new(path);
-                if !h.eq(hash) {
-                    panic!("Expected: {hash}. Actual: {h}");
-                }
+                hash_verify(hash, &h);
                 fs::copy(path, Path::new(INTER_STEPS_PATH).join(format!("{}.png", hash))).unwrap();
                 hash.clone()
             },
-            Node::Commit(prev, action, _) => {
+            Node::Commit(prev, action, hash) => {
                 let prev = prev.materialize(path);
                 let out = Path::new(INTER_STEPS_PATH).join("tmp.png");
                 let out_path = out.clone().into_os_string().into_string().unwrap();
@@ -147,7 +150,10 @@ impl Node {
                     },
                     _ => panic!("sdfd")
                 };
-                Hash::new(out.as_path())
+                let out_hash = Hash::new(out.as_path());
+                hash_verify(hash, &out_hash);
+                fs::rename(out_path, Path::new(INTER_STEPS_PATH).join(format!("{}.png", out_hash)));
+                out_hash
             }
         }
     }
@@ -155,9 +161,9 @@ impl Node {
 
 fn main() {
     let c = Node::Image(Hash::from_string(String::from("f985573a7735881f58c8679dcd3a062c")));
-    let c = Node::new(Box::new(c), Action::Monochrome, Hash::from_string(String::from("f985573a7735881f58c8679dcd3a062c")));
-    // let c = Node::new(Box::new(c),
-    //     Action::Crop(Geometry { width: 400, height: 400, x_off: 300, y_off: 0 }),
-    //     Hash::from_string(String::from("12345678901234567890123456789012")));
+    let c = Node::new(Box::new(c), Action::Monochrome, Hash::from_string(String::from("54f85854ca6d77d50bcd5e338e78ce15")));
+    let c = Node::new(Box::new(c),
+        Action::Crop(Geometry { width: 100, height: 200, x_off: 300, y_off: 0 }),
+        Hash::from_string(String::from("e330efab74317d4b98eb30b03df73fa6")));
     c.materialize(Path::new("../meme-example.png"));
 }
