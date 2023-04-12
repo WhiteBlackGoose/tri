@@ -1,4 +1,5 @@
 use std::{cell::RefCell, rc::Rc, borrow::{BorrowMut, Borrow}, ops::Range, process::Command, fs::{File, self}, iter::Enumerate, path::{Path, PathBuf}, fmt::{Display, Write}};
+use std::fmt::format;
 use sha256::{self, digest, digest_file, try_digest};
 
 type Sha256 = [u8; 32];
@@ -126,7 +127,7 @@ impl Node {
                 if !h.eq(hash) {
                     panic!("Expected: {hash}. Actual: {h}");
                 }
-                fs::copy(path, Path::new(INTER_STEPS_PATH).join("{hash}.png"));
+                fs::copy(path, Path::new(INTER_STEPS_PATH).join(format!("{}.png", hash))).unwrap();
                 hash.clone()
             },
             Node::Commit(prev, action, _) => {
@@ -153,10 +154,10 @@ impl Node {
 }
 
 fn main() {
-    let c = Node::Image(Hash::from_string(String::from("12345678901234567890123456789012")));
-    // let c = Node::new(Box::new(c), Action::Monochrome);
-    let c = Node::new(Box::new(c),
-        Action::Crop(Geometry { width: 400, height: 400, x_off: 300, y_off: 0 }), 
-        Hash::from_string(String::from("12345678901234567890123456789012")));
-    c.materialize(Path::new("/home/goose/Pictures/meme-turing.png"));
+    let c = Node::Image(Hash::from_string(String::from("f985573a7735881f58c8679dcd3a062c")));
+    let c = Node::new(Box::new(c), Action::Monochrome, Hash::from_string(String::from("f985573a7735881f58c8679dcd3a062c")));
+    // let c = Node::new(Box::new(c),
+    //     Action::Crop(Geometry { width: 400, height: 400, x_off: 300, y_off: 0 }),
+    //     Hash::from_string(String::from("12345678901234567890123456789012")));
+    c.materialize(Path::new("../meme-example.png"));
 }
