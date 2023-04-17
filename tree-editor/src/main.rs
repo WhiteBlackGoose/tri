@@ -43,7 +43,7 @@ impl Hash {
 impl Display for Hash {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for c in self.sha256 {
-            f.write_char(c as char);
+            f.write_char(c as char).expect("Error");
         }
         Ok(())
     }
@@ -76,15 +76,6 @@ enum Action {
     Monochrome
 }
 
-impl Action {
-    fn hash(self) -> String {
-        match self {
-            Self::Crop(Geometry) => String::from("aaa"),
-            Self::Monochrome => String::from("bbb")
-        }
-    }
-}
-
 fn magick(args: &Vec<String>) {
     let mut cmd = Command::new("convert");
     print!("Inv: ");
@@ -108,24 +99,12 @@ enum Node {
 }
 
 impl Node {
-    // fn hash(&self) -> String {
-    //     match self {
-    //         Self::Commit(_, _, hash) => {
-    //             let s: String = hash.sha256.iter().collect();
-    //             s
-    //         },
-    //         Self::Image(hash) => {
-    //             let s: String = hash.sha256.iter().collect();
-    //             s
-    //         }
-    //     }
-    // }
 
     fn new(prev: Box<Node>, action: Action, hash: Hash) -> Node {
         Node::Commit(prev, action, hash)
     }
 
-    fn materialize(&self, path: &Path) -> Hash {
+    fn materialize<TLog>(&self, path: &Path, log: &TLog) -> Hash where TLog: Fn(&str) {
         match self {
             Node::Image(hash) => {
                 let h = Hash::new(path);
@@ -134,7 +113,11 @@ impl Node {
                 hash.clone()
             },
             Node::Commit(prev, action, hash) => {
-                let prev = prev.materialize(path);
+                if (Path::new(INTER_STEPS_PATH).join(hash.to_string()).with_extension("png")).exists() {
+                    log(format!("Cache for {} is found, exiting", hash).as_str());
+                    return hash.clone();
+                }
+                let prev = prev.materialize(path, log);
                 let out = Path::new(INTER_STEPS_PATH).join("tmp.png");
                 let out_path = out.clone().into_os_string().into_string().unwrap();
                 let inw = Path::new(INTER_STEPS_PATH).join(format!("{}.png", prev));
@@ -165,5 +148,5 @@ fn main() {
     let c = Node::new(Box::new(c),
         Action::Crop(Geometry { width: 100, height: 200, x_off: 300, y_off: 0 }),
         Hash::from_string(String::from("e330efab74317d4b98eb30b03df73fa6")));
-    c.materialize(Path::new("../meme-example.png"));
+    c.materialize(Path::new("../meme-example.png"), &|s| println!("LOG: {}", s));
 }
