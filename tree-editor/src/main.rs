@@ -76,14 +76,14 @@ enum Action {
     Monochrome
 }
 
-fn magick(args: &Vec<String>) {
+fn magick<TLog>(args: &Vec<String>, log: &TLog) where TLog : Fn(&str) {
     let mut cmd = Command::new("convert");
-    print!("Inv: ");
+    let mut str_to_log = String::from("Running command: convert ");
     for arg in args {
         cmd.arg(arg);
-        print!("{arg} ");
+        str_to_log.push_str(format!("{arg} ").as_str());
     }
-    println!("");
+    log(str_to_log.as_str());
     cmd.output().expect("Ohno");
 }
 
@@ -104,41 +104,58 @@ impl Node {
         Node::Commit(prev, action, hash)
     }
 
-    fn materialize<TLog>(&self, path: &Path, log: &TLog) -> Hash where TLog: Fn(&str) {
+    fn materialize_inner<TLog>(&self, path: &Path, log: &TLog) -> Hash where TLog: Fn(&str) {
         match self {
             Node::Image(hash) => {
+                log(format!("Image {} initialized!", hash).as_str());
                 let h = Hash::new(path);
                 hash_verify(hash, &h);
-                fs::copy(path, Path::new(INTER_STEPS_PATH).join(format!("{}.png", hash))).unwrap();
+                fs::copy(path, Path::new(INTER_STEPS_PATH).join(format!("{}", hash))).unwrap();
                 hash.clone()
             },
             Node::Commit(prev, action, hash) => {
-                if (Path::new(INTER_STEPS_PATH).join(hash.to_string()).with_extension("png")).exists() {
+                if (Path::new(INTER_STEPS_PATH).join(hash.to_string())).exists() {
                     log(format!("Cache for {} is found, exiting", hash).as_str());
                     return hash.clone();
                 }
-                let prev = prev.materialize(path, log);
-                let out = Path::new(INTER_STEPS_PATH).join("tmp.png");
+                let prev = prev.materialize_inner(path, log);
+                let out = Path::new(INTER_STEPS_PATH).join("tmp");
                 let out_path = out.clone().into_os_string().into_string().unwrap();
-                let inw = Path::new(INTER_STEPS_PATH).join(format!("{}.png", prev));
+                let inw = Path::new(INTER_STEPS_PATH).join(format!("{}", prev));
                 let in_path = inw.clone().into_os_string().into_string().unwrap();
                 match action {
                     Action::Monochrome => {
                         let v = vec![in_path.clone(), String::from("-monochrome"), out_path.clone()];
-                        magick(&v);
+                        magick(&v, log);
                     },
                     Action::Crop(geo) => {
                         let v = vec![in_path.clone(), String::from("-crop"), geo.to_magick(), out_path.clone()];
-                        magick(&v);
+                        magick(&v, log);
                     },
                     _ => panic!("sdfd")
                 };
                 let out_hash = Hash::new(out.as_path());
                 hash_verify(hash, &out_hash);
-                fs::rename(out_path, Path::new(INTER_STEPS_PATH).join(format!("{}.png", out_hash)));
+                fs::rename(out_path, Path::new(INTER_STEPS_PATH).join(format!("{}", out_hash)));
                 out_hash
             }
         }
+    }
+
+    fn materialize<TLog>(&self, path: &Path, log: &TLog) -> Hash where TLog: Fn(&str) {
+        let h = self.materialize_inner(path, log);
+        let out_path = 
+            if let Some(ext) = path.extension() {
+                let mut s = String::from("out");
+                s.push('.');
+                s.push_str(ext.to_str().unwrap());
+                s
+            } else {
+                String::from("out")
+            };
+        log(format!("Returning to path {}", out_path).as_str());
+        fs::copy(Path::new(INTER_STEPS_PATH).join(h.to_string()), out_path).expect("sdfdf");
+        h
     }
 }
 
