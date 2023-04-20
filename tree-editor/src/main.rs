@@ -136,7 +136,7 @@ impl Node {
                 };
                 let out_hash = Hash::new(out.as_path());
                 hash_verify(hash, &out_hash);
-                fs::rename(out_path, Path::new(INTER_STEPS_PATH).join(format!("{}", out_hash)));
+                fs::rename(out_path, Path::new(INTER_STEPS_PATH).join(format!("{}", out_hash))).expect("Ohno!");
                 out_hash
             }
         }
