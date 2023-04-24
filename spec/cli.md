@@ -13,7 +13,7 @@ There are commands and options
 tri status
 ```
 
-### status
+### status?
 
 Shows the latest commit and its parent, e. g.
 
@@ -35,3 +35,24 @@ e330efab74317d4b98eb30b03df73fa6  crop 10x10
 ```
 
 ### init
+
+Takes an image path as an argument and computes its hash and creates a file called "tri-tree.csv".
+
+### commit
+
+Takes an action as a input, if needed with its necessary argument, and applies the action to the current commit using ImageMagick and calculates its hash.
+
+
+### Example
+
+A normal workflow could look like this:
+
+```
+tri init folder/meme.png
+
+tri commit monochrome
+
+tri commit crop 100x100
+
+tri log
+```
