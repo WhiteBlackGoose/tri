@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 sha256 = "1.1.2"
+csv = "*"

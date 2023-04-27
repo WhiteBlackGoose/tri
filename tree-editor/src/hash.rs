@@ -19,7 +19,7 @@ impl Hash {
         Hash { sha256: r }
     }
 
-    pub fn from_string(sha: String) -> Hash {
+    pub fn from_string(sha: &str) -> Hash {
         assert_eq!(sha.len(), 32);
         let mut r: Sha256 = [0; 32];
         for i in 0..32 {

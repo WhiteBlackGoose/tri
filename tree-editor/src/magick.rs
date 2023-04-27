@@ -5,6 +5,14 @@ pub struct MagickCommand {
     pub args: Vec<String>
 }
 
+impl MagickCommand {
+    pub fn from_string(s: &str) -> MagickCommand {
+        MagickCommand {
+            args: s.split(' ').map(String::from).collect::<Vec<_>>()
+        }
+    }
+}
+
 pub fn magick<TLog>(from: &str, to: &str, mc: &MagickCommand, log: &TLog) where TLog : Fn(&str) {
     let mut cmd = Command::new("convert");
     let mut str_to_log = String::from("Running command: convert ");
