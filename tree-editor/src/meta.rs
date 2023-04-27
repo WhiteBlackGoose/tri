@@ -1,4 +1,4 @@
-use std::{path::Path, vec};
+use std::{path::Path, vec, fs::File, io::Write};
 
 use crate::{hash::Hash, magick::MagickCommand};
 
@@ -36,7 +36,12 @@ pub fn read_meta(path: &Path) -> Vec<Line> {
         let line = line.expect("ohno");
         let mut iter = line.iter();
         let commit = Hash::from_string(iter.next().expect("ohno"));
-        let parent = Hash::from_string(iter.next().expect("ohno"));
+        let parent_text = iter.next().expect("ohno");
+        let parent = if parent_text.is_empty() {
+            None
+        } else {
+            Some(Hash::from_string(parent_text))
+        };
         let mt_text = iter.next().expect("ohno");
         let command = if mt_text.is_empty() {
             None
@@ -47,4 +52,11 @@ pub fn read_meta(path: &Path) -> Vec<Line> {
         res.push(Line { commit, parent, command, kind });
     }
     res
+}
+
+pub fn init_meta(path: &Path, hash: &Hash) {
+    // TODO: message
+    let mut out = File::create(path).expect("");
+    writeln!(out, "{}", "commit,parent,command,node_status");
+    writeln!(out, "{},,,HEAD", hash);
 }

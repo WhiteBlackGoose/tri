@@ -69,27 +69,17 @@ impl Node {
     }
 }
 
-fn line_to_node(line: &Line, parent: Option<Node>) -> Node {
-    match parent {
-        None => Node::Image(line.commit),
-        Some(par) => Node::Commit(
-            Box::new(par),
-            // TODO: expect message
-            line.command.expect("Empty command supplied!"),
-            line.commit)
-    }
-}
 
 fn collect_nodes(hash: &Hash, lines: &Vec<crate::meta::Line>) -> Node {
-    let found = lines.iter().filter(|line| line.commit.eq(hash));
-    assert_eq!(found.count(), 1);
+    let mut found = lines.iter().filter(|line| line.commit.eq(hash));
+    assert_eq!(found.clone().count(), 1);
     let found = found.next().unwrap();
     match found.parent {
         None => Node::Image(found.commit),
         Some(par) => Node::Commit(
             Box::new(collect_nodes(&par, lines)), 
             // TODO: expect message
-            found.command.expect("Heh"),
+            found.command.clone().expect("Heh"),
             found.commit
             )
     }
@@ -97,14 +87,14 @@ fn collect_nodes(hash: &Hash, lines: &Vec<crate::meta::Line>) -> Node {
 
 pub fn read_graph(path: &Path) -> Node {
     let lines = read_meta(path);
-    let head_found = lines.iter().filter(|line| line.kind == CommitKind::HEAD);
-    assert_eq!(head_found.count(), 1);
+    let mut head_found = lines.iter().filter(|line| line.kind == CommitKind::HEAD);
+    assert_eq!(head_found.clone().count(), 1);
     let head = head_found.next().unwrap();
     if let Some(par) = head.parent {
         Node::new(
             Box::new(collect_nodes(&par, &lines)),
             // TODO: expect message
-            head.command.expect("ohno"),
+            head.command.clone().expect("ohno"),
             head.commit)
     } else {
         Node::Image(head.commit)
