@@ -3,6 +3,7 @@ use std::path::Path;
 
 use crate::hash::Hash;
 use crate::magick::{MagickCommand, self};
+use crate::meta::{CommitKind, read_meta, Line};
 
 const INTER_STEPS_PATH: &str = "inter";
 
@@ -65,5 +66,47 @@ impl Node {
         log(format!("Returning to path {}", out_path).as_str());
         fs::copy(Path::new(INTER_STEPS_PATH).join(h.to_string()), out_path).expect("sdfdf");
         h
+    }
+}
+
+fn line_to_node(line: &Line, parent: Option<Node>) -> Node {
+    match parent {
+        None => Node::Image(line.commit),
+        Some(par) => Node::Commit(
+            Box::new(par),
+            // TODO: expect message
+            line.command.expect("Empty command supplied!"),
+            line.commit)
+    }
+}
+
+fn collect_nodes(hash: &Hash, lines: &Vec<crate::meta::Line>) -> Node {
+    let found = lines.iter().filter(|line| line.commit.eq(hash));
+    assert_eq!(found.count(), 1);
+    let found = found.next().unwrap();
+    match found.parent {
+        None => Node::Image(found.commit),
+        Some(par) => Node::Commit(
+            Box::new(collect_nodes(&par, lines)), 
+            // TODO: expect message
+            found.command.expect("Heh"),
+            found.commit
+            )
+    }
+}
+
+pub fn read_graph(path: &Path) -> Node {
+    let lines = read_meta(path);
+    let head_found = lines.iter().filter(|line| line.kind == CommitKind::HEAD);
+    assert_eq!(head_found.count(), 1);
+    let head = head_found.next().unwrap();
+    if let Some(par) = head.parent {
+        Node::new(
+            Box::new(collect_nodes(&par, &lines)),
+            // TODO: expect message
+            head.command.expect("ohno"),
+            head.commit)
+    } else {
+        Node::Image(head.commit)
     }
 }

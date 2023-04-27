@@ -2,10 +2,11 @@ use std::{path::Path, vec};
 
 use crate::{hash::Hash, magick::MagickCommand};
 
+#[derive(PartialEq)]
 pub enum CommitKind {
     Normal,
     HEAD,
-    Root
+    ROOT
 }
 
 impl CommitKind {
@@ -13,7 +14,6 @@ impl CommitKind {
         match s {
             "" => CommitKind::Normal,
             "HEAD" => CommitKind::HEAD,
-            "Root" => CommitKind::Root,
             // TODO: expect message
             _ => panic!("Ohno!")
         }
@@ -21,10 +21,10 @@ impl CommitKind {
 }
 
 pub struct Line {
-    commit: Hash,
-    parent: Hash,
-    command: MagickCommand,
-    kind: CommitKind
+    pub commit: Hash,
+    pub parent: Option<Hash>,
+    pub command: Option<MagickCommand>,
+    pub kind: CommitKind
 }
 
 pub fn read_meta(path: &Path) -> Vec<Line> {
@@ -37,7 +37,12 @@ pub fn read_meta(path: &Path) -> Vec<Line> {
         let mut iter = line.iter();
         let commit = Hash::from_string(iter.next().expect("ohno"));
         let parent = Hash::from_string(iter.next().expect("ohno"));
-        let command = MagickCommand::from_string(iter.next().expect("ohno"));
+        let mt_text = iter.next().expect("ohno");
+        let command = if mt_text.is_empty() {
+            None
+        } else {
+            Some(MagickCommand::from_string(mt_text))
+        };
         let kind = CommitKind::from_string(iter.next().expect("ohno"));
         res.push(Line { commit, parent, command, kind });
     }
