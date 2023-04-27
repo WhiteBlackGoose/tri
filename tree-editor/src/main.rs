@@ -1,54 +1,12 @@
 use std::{cell::RefCell, rc::Rc, borrow::{BorrowMut, Borrow}, ops::Range, process::Command, fs::{File, self}, iter::Enumerate, path::{Path, PathBuf}, fmt::{Display, Write}};
 use std::fmt::format;
-use sha256::{self, digest, digest_file, try_digest};
+mod hash;
+use hash::Hash;
+mod magick;
+use magick::magick;
 
-type Sha256 = [u8; 32];
 
 const INTER_STEPS_PATH: &str = "inter";
-
-#[derive(Clone, Copy)]
-struct Hash {
-    pub sha256: Sha256,
-}
-
-impl Hash {
-    fn new(path: &Path) -> Hash {
-        let mut r: Sha256 = [0; 32];
-        let sha = sha256::try_digest(path).expect("Problems computing hash");
-        for i in 0..32 {
-            r[i] = sha.as_bytes()[i];
-        }
-        Hash { sha256: r }
-    }
-
-    fn from_string(sha: String) -> Hash {
-        assert_eq!(sha.len(), 32);
-        let mut r: Sha256 = [0; 32];
-        for i in 0..32 {
-            r[i] = sha.as_bytes()[i];
-        }
-        Hash { sha256: r }
-    }
-
-    fn eq(&self, other: &Hash) -> bool {
-        for (a, b) in self.sha256.iter().zip(other.sha256) {
-            if *a != b {
-                return false;
-            }
-        }
-        true
-    }
-}
-
-impl Display for Hash {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for c in self.sha256 {
-            f.write_char(c as char).expect("Error");
-        }
-        Ok(())
-    }
-}
-
 
 #[derive(Clone, Copy)]
 struct Geometry {
@@ -74,17 +32,6 @@ impl Geometry {
 enum Action {
     Crop(Geometry),
     Monochrome
-}
-
-fn magick<TLog>(args: &Vec<String>, log: &TLog) where TLog : Fn(&str) {
-    let mut cmd = Command::new("convert");
-    let mut str_to_log = String::from("Running command: convert ");
-    for arg in args {
-        cmd.arg(arg);
-        str_to_log.push_str(format!("{arg} ").as_str());
-    }
-    log(str_to_log.as_str());
-    cmd.output().expect("Ohno");
 }
 
 fn hash_verify(expected: &Hash, actual: &Hash) {
@@ -132,7 +79,6 @@ impl Node {
                         let v = vec![in_path.clone(), String::from("-crop"), geo.to_magick(), out_path.clone()];
                         magick(&v, log);
                     },
-                    _ => panic!("sdfd")
                 };
                 let out_hash = Hash::new(out.as_path());
                 hash_verify(hash, &out_hash);
