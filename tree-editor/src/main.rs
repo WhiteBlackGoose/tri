@@ -3,36 +3,9 @@ use std::fmt::format;
 mod hash;
 use hash::Hash;
 mod magick;
-use magick::magick;
-
+use magick::{magick, MagickCommand};
 
 const INTER_STEPS_PATH: &str = "inter";
-
-#[derive(Clone, Copy)]
-struct Geometry {
-    width: i32, height: i32,
-    x_off: i32, y_off: i32,
-}
-
-impl Geometry {
-    fn to_magick(&self) -> String {
-        let mut res = String::new();
-        res.push_str(self.width.to_string().as_str());
-        res.push('x');
-        res.push_str(self.height.to_string().as_str());
-        res.push('+');
-        res.push_str(self.x_off.to_string().as_str());
-        res.push('x');
-        res.push_str(self.y_off.to_string().as_str());
-        res
-    }
-}
-
-#[derive(Clone, Copy)]
-enum Action {
-    Crop(Geometry),
-    Monochrome
-}
 
 fn hash_verify(expected: &Hash, actual: &Hash) {
     if !expected.eq(actual) {
@@ -41,14 +14,14 @@ fn hash_verify(expected: &Hash, actual: &Hash) {
 }
 
 enum Node {
-    Commit(Box<Node>, Action, Hash),
+    Commit(Box<Node>, MagickCommand, Hash),
     Image(Hash)
 }
 
 impl Node {
 
-    fn new(prev: Box<Node>, action: Action, hash: Hash) -> Node {
-        Node::Commit(prev, action, hash)
+    fn new(prev: Box<Node>, cmd: MagickCommand, hash: Hash) -> Node {
+        Node::Commit(prev, cmd, hash)
     }
 
     fn materialize_inner<TLog>(&self, path: &Path, log: &TLog) -> Hash where TLog: Fn(&str) {
@@ -70,16 +43,7 @@ impl Node {
                 let out_path = out.clone().into_os_string().into_string().unwrap();
                 let inw = Path::new(INTER_STEPS_PATH).join(format!("{}", prev));
                 let in_path = inw.clone().into_os_string().into_string().unwrap();
-                match action {
-                    Action::Monochrome => {
-                        let v = vec![in_path.clone(), String::from("-monochrome"), out_path.clone()];
-                        magick(&v, log);
-                    },
-                    Action::Crop(geo) => {
-                        let v = vec![in_path.clone(), String::from("-crop"), geo.to_magick(), out_path.clone()];
-                        magick(&v, log);
-                    },
-                };
+                magick(in_path.as_str(), out_path.as_str(), action, log);
                 let out_hash = Hash::new(out.as_path());
                 hash_verify(hash, &out_hash);
                 fs::rename(out_path, Path::new(INTER_STEPS_PATH).join(format!("{}", out_hash))).expect("Ohno!");
@@ -107,9 +71,16 @@ impl Node {
 
 fn main() {
     let c = Node::Image(Hash::from_string(String::from("f985573a7735881f58c8679dcd3a062c")));
-    let c = Node::new(Box::new(c), Action::Monochrome, Hash::from_string(String::from("54f85854ca6d77d50bcd5e338e78ce15")));
+    let c = Node::new(Box::new(c), 
+        MagickCommand { args: vec![
+            String::from("monochrome")
+        ] },
+        Hash::from_string(String::from("54f85854ca6d77d50bcd5e338e78ce15")));
     let c = Node::new(Box::new(c),
-        Action::Crop(Geometry { width: 100, height: 200, x_off: 300, y_off: 0 }),
+        MagickCommand { args: vec![
+            String::from("crop"),
+            String::from("100x100"),
+        ] },
         Hash::from_string(String::from("e330efab74317d4b98eb30b03df73fa6")));
     c.materialize(Path::new("../meme-example.png"), &|s| println!("LOG: {}", s));
 }
