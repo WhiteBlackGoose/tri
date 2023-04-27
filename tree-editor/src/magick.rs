@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{process::Command, fmt::Display};
 
 #[derive(Clone)]
 pub struct MagickCommand {
@@ -10,6 +10,16 @@ impl MagickCommand {
         MagickCommand {
             args: s.split(' ').map(String::from).collect::<Vec<_>>()
         }
+    }
+}
+
+impl Display for MagickCommand {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for arg in &self.args {
+            f.write_str(arg.as_str()).unwrap();
+            f.write_str(" ").unwrap();
+        }
+        std::fmt::Result::Ok(())
     }
 }
 

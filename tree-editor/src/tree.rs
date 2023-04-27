@@ -70,33 +70,37 @@ impl Node {
 }
 
 
-fn collect_nodes(hash: &Hash, lines: &Vec<crate::meta::Line>) -> Node {
+fn collect_nodes(hash: &Hash, lines: &Vec<crate::meta::Line>) -> Result<Node, String> {
     let mut found = lines.iter().filter(|line| line.commit.eq(hash));
-    assert_eq!(found.clone().count(), 1);
+    if found.clone().count() != 1 {
+        return Err(String::from("Oh no!"))
+    }
     let found = found.next().unwrap();
     match found.parent {
-        None => Node::Image(found.commit),
-        Some(par) => Node::Commit(
-            Box::new(collect_nodes(&par, lines)), 
+        None => Ok(Node::Image(found.commit)),
+        Some(par) => Ok(Node::Commit(
+            Box::new(collect_nodes(&par, lines)?), 
             // TODO: expect message
-            found.command.clone().expect("Heh"),
+            found.command.clone().ok_or_else(|| String::from("No command found"))?,
             found.commit
-            )
+            ))
     }
 }
 
-pub fn read_graph(path: &Path) -> Node {
+pub fn read_graph(path: &Path) -> Result<Node, String> {
     let lines = read_meta(path);
     let mut head_found = lines.iter().filter(|line| line.kind == CommitKind::HEAD);
-    assert_eq!(head_found.clone().count(), 1);
-    let head = head_found.next().unwrap();
+    if head_found.clone().count() != 1 {
+        return Err(String::from(format!("HEDA should only be 1, not {}", head_found.clone().count())))
+    }
+    let head = head_found.next().ok_or_else(|| "Ohno")?;
     if let Some(par) = head.parent {
-        Node::new(
-            Box::new(collect_nodes(&par, &lines)),
-            // TODO: expect message
-            head.command.clone().expect("ohno"),
-            head.commit)
+        Ok(Node::new(
+                   Box::new(collect_nodes(&par, &lines)?),
+                   // TODO: expect message
+                   head.command.clone().expect("ohno"),
+                   head.commit))
     } else {
-        Node::Image(head.commit)
+        Ok(Node::Image(head.commit))
     }
 }

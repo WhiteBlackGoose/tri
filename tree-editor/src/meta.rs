@@ -57,6 +57,7 @@ pub fn read_meta(path: &Path) -> Vec<Line> {
 pub fn init_meta(path: &Path, hash: &Hash) {
     // TODO: message
     let mut out = File::create(path).expect("");
-    writeln!(out, "{}", "commit,parent,command,node_status");
-    writeln!(out, "{},,,HEAD", hash);
+    writeln!(out, "{}", "commit,parent,command,node_status").unwrap();
+    writeln!(out, "{},,,HEAD", hash).unwrap();
+    out.flush().unwrap();
 }
