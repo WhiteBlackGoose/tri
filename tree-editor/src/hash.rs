@@ -6,6 +6,7 @@ type Sha256 = [u8; 32];
 
 #[derive(Clone, Copy)]
 #[derive(Ord, Eq, PartialOrd, PartialEq)]
+#[derive(Hash)]
 pub struct Hash {
     pub sha256: Sha256,
 }

@@ -7,6 +7,7 @@ use std::{path::{PathBuf, Path}, fs, thread::panicking, hash::Hash};
 
 use clap::{arg, command, value_parser, ArgAction, Command, ArgMatches, Arg};
 use magick::{MagickCommand, magick};
+use meta::meta_visualize;
 use tree::{read_graph, INTER_STEPS_PATH};
 
 use crate::{meta::init_meta, tree::Node};
@@ -50,11 +51,16 @@ fn main() {
                 Command::new("log")
                     .about("Print history of changes from HEAD to the Root")
             )
-            .get_matches();
+            .subcommand(
+                Command::new("tree")
+                    .about("Visualizes the tree of commits")
+            )
+            // .get_matches();
     // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-rotate", "60"]);
     // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-crop", "100x200+0x0"]);
     // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-monochrome"]);
     // .get_matches_from(vec!["", "log"]);
+    .get_matches_from(vec!["", "tree"]);
     // .get_matches_from(vec!["", "init", "--path", "../meme-example.png"]);
 
 
@@ -123,5 +129,10 @@ fn main() {
             write_meta(metafile_path, &meta);
 
         }
+    }
+
+    if let Some(_) = matches.subcommand_matches("tree") {
+        let meta = read_meta(metafile_path);
+        meta_visualize(&meta);
     }
 }

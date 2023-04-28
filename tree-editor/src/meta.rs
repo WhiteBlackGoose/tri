@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::{path::Path, vec, fs::File, io::Write};
 use std::io::Lines;
 
@@ -90,4 +91,29 @@ pub fn init_meta(path: &Path, hash: &Hash) {
     writeln!(out, "{}", "commit,parent,command,node_status").unwrap();
     writeln!(out, "{},,,HEAD", hash).unwrap();
     out.flush().unwrap();
+}
+
+pub fn meta_visualize(meta: &Meta) {
+    let mut mentioned: HashSet<Hash> = HashSet::new();
+    fn vis(mentioned: &mut HashSet<Hash>, line: &Line, meta: &Meta, depth: u32) {
+        if mentioned.contains(&line.commit) {
+            return
+        }
+        mentioned.insert(line.commit);
+        print!("{}", str::repeat("  ", depth as usize).as_str());
+        let hash_str = format!("{}", line.commit);
+        print!("{}", &hash_str[..6]);
+        if line.command.is_some() {
+            print!(" {}", line.command.clone().unwrap());
+        }
+        if line.kind == CommitKind::HEAD {
+            print!(" (HEAD)");
+        }
+        println!();
+        for child in meta.iter().filter(|child| match child.parent { None => false, Some(par) => par.eq(&line.commit) } ) {
+            vis(mentioned, &child, meta, depth + 1);
+        }
+    }
+    let root = meta.iter().filter(|line| line.parent.is_none()).next().unwrap();
+    vis(&mut mentioned, root, meta, 0);
 }
