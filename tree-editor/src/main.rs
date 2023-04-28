@@ -14,6 +14,8 @@ use crate::{meta::init_meta, tree::Node};
 use crate::meta::{Line, read_meta, write_meta};
 use crate::meta::CommitKind::{HEAD, Normal};
 
+use colored::Colorize;
+
 const METAFILE_NAME: &str = "tri-meta";
 
 fn main() {
@@ -98,17 +100,25 @@ fn main() {
 
     if let Some(_) = matches.subcommand_matches("log") {
         let graph = read_graph(&read_meta(metafile_path)).unwrap();
-        println!("Latest commits are at the top");
-        fn crawl_graph(graph: &Node) {
+        fn crawl_graph<T1, T2>(graph: &Node, ima: &mut T1, imc: &mut T2) where T1: FnMut(&hash::Hash), T2: FnMut(&MagickCommand, &hash::Hash) {
             match graph {
-                Node::Image(hash) => println!("Image {}", hash),
+                Node::Image(hash) => ima(hash),
                 Node::Commit(parent, cmd, hash) => {
-                    println!("Commit {cmd} ({hash})");
-                    crawl_graph(parent)
+                    imc(cmd, hash);
+                    crawl_graph(parent, ima, imc)
                 }
             }
         }
-        crawl_graph(&graph);
+        let mut count = 1;
+        crawl_graph(&graph, &mut |_| (), &mut |_,_| count += 1);
+        let mut iter = 0;
+        crawl_graph(&graph, &mut |hash| println!("{}", format!("{}", hash).truecolor(90, 90, 90)), 
+            &mut |cmd, hash|
+            {
+                let col = 255 - (iter * 180 / count) as u8;
+                iter += 1;
+                println!("{}", format!("{} {}", hash, cmd).truecolor(col, col, col));
+            });
     }
 
     if let Some(matches) = matches.subcommand_matches("commit") {
@@ -152,19 +162,18 @@ fn main() {
 
     if let Some(matches) = matches.subcommand_matches("reset") {
         let mut meta = read_meta(metafile_path);
-        let graph = read_graph(&meta).unwrap();
         if let Some(commit_addr) = matches.get_one::<String>("addr") {
         if let Some(img_path) = matches.get_one::<PathBuf>("path") {
             let line_id = meta_find_line(&meta, commit_addr)
                 .expect("Either non-existent or ambiguous commit provided!");
             let img_path = img_path.as_path();
-            let old_hash = graph.materialize(img_path, &log);
+            // let old_hash = graph.materialize(img_path, &log);
             behead_meta(&mut meta);
             meta[line_id].kind = CommitKind::HEAD;
             let new_graph = read_graph(&meta).unwrap();
             let new_hash = new_graph.materialize(img_path, &log);
             write_meta(metafile_path, &meta);
-            println!("HEAD reset from {} to {}", old_hash, new_hash);
+            println!("HEAD reset to {}", new_hash);
         }
         }
     }

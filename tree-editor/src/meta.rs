@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::{path::Path, vec, fs::File, io::Write};
-use std::io::Lines;
 use colored::Colorize;
 
 use crate::{hash::Hash, magick::MagickCommand};
