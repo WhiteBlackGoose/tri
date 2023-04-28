@@ -91,7 +91,7 @@ pub fn read_graph(path: &Path) -> Result<Node, String> {
     let lines = read_meta(path);
     let mut head_found = lines.iter().filter(|line| line.kind == CommitKind::HEAD);
     if head_found.clone().count() != 1 {
-        return Err(String::from(format!("HEDA should only be 1, not {}", head_found.clone().count())))
+        return Err(String::from(format!("HEAD should only be 1, not {}", head_found.clone().count())))
     }
     let head = head_found.next().ok_or_else(|| "Ohno")?;
     if let Some(par) = head.parent {
