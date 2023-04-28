@@ -12,9 +12,9 @@ commit,parent,command,node_status
 ```
 
 For every line one of the following is true:
-- It has different commit and parent hashes, non-empty command, HEAD as status
-- It only has commit but empty parent, no command and no node_status
-- It only has commit but empty parent, no command but node_status is HEAD
+- It has different commit and parent hashes, non-empty command, HEAD or empty as status (normal commit)
+- It only has commit but empty parent, no command and no node_status (-> Root)
+- It only has commit but empty parent, no command but node_status is HEAD (-> Root is head, e.g. just initialized)
 
 # Unresolved features
 
