@@ -5,7 +5,7 @@ use crate::hash::Hash;
 use crate::magick::{MagickCommand, self};
 use crate::meta::{CommitKind, read_meta, Line};
 
-const INTER_STEPS_PATH: &str = "inter";
+pub const INTER_STEPS_PATH: &str = "inter";
 
 pub fn hash_verify(expected: &Hash, actual: &Hash) {
     if !expected.eq(actual) {
@@ -41,10 +41,9 @@ impl Node {
                 let prev = prev.materialize_inner(path, log);
                 let out = Path::new(INTER_STEPS_PATH).join("tmp");
                 let out_path = out.clone().into_os_string().into_string().unwrap();
-                let inw = Path::new(INTER_STEPS_PATH).join(format!("{}", prev));
-                let in_path = inw.clone().into_os_string().into_string().unwrap();
-                magick::magick(in_path.as_str(), out_path.as_str(), action, log);
-                let out_hash = Hash::new(out.as_path());
+                let in_ = Path::new(INTER_STEPS_PATH).join(format!("{}", prev));
+                let in_path = in_.clone().into_os_string().into_string().unwrap();
+                let out_hash = magick::magick(in_path.as_str(), out_path.as_str(), action, log);
                 hash_verify(hash, &out_hash);
                 fs::rename(out_path, Path::new(INTER_STEPS_PATH).join(format!("{}", out_hash))).expect("Ohno!");
                 out_hash

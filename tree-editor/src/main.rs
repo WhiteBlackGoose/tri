@@ -4,8 +4,9 @@ mod meta;
 mod tree;
 use std::{path::{PathBuf, Path}, fs, thread::panicking, hash::Hash};
 
-use clap::{arg, command, value_parser, ArgAction, Command, ArgMatches};
-use tree::read_graph;
+use clap::{arg, command, value_parser, ArgAction, Command, ArgMatches, Arg};
+use magick::{MagickCommand, magick};
+use tree::{read_graph, INTER_STEPS_PATH};
 
 use crate::{meta::init_meta, tree::Node};
 
@@ -30,13 +31,25 @@ fn main() {
         .subcommand(
             Command::new("commit")
                 .about("Make a commit based on the current one and bump HEAD to it")
+                .arg(
+                    arg!(<cmd> ... "magick commands")
+                    .trailing_var_arg(true)
+                )
+                .arg(
+                    arg!(
+                        -p --path <FILE> "Specify the path to the initial image"
+                    )
+                    .required(true)
+                    .value_parser(value_parser!(PathBuf))
+                )
         )
         .subcommand(
             Command::new("log")
                 .about("Print history of changes from HEAD to the Root")
         )
-        // .get_matches();
-        .get_matches_from(vec!["", "log"]);
+        .get_matches();
+        // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-crop", "100x200+0x0"]);
+        // .get_matches_from(vec!["", "init", "--path", "../meme-example.png"]);
 
 
     if let Some(matches) = matches.subcommand_matches("init") {
@@ -70,5 +83,18 @@ fn main() {
 
     if let Some(matches) = matches.subcommand_matches("commit") {
         let graph = read_graph(metafile_path).unwrap();
+        let trail: Vec<_> = matches.get_many::<String>("cmd").unwrap().map(String::from).collect();
+        let mag = MagickCommand { args: trail };
+        if let Some(img_path) = matches.get_one::<PathBuf>("path") {
+            let hash = graph.materialize(img_path, &|s| println!("{}", s));
+            let new_hash = magick(
+                Path::new(INTER_STEPS_PATH).join(format!("{}", hash)).to_str().unwrap(), 
+                Path::new(INTER_STEPS_PATH).join("tmp").to_str().unwrap(), 
+                &mag,
+                &|s| println!("{}", s));
+            fs::rename(Path::new(INTER_STEPS_PATH).join("tmp"), Path::new(INTER_STEPS_PATH).join(format!("{}", new_hash))).expect("Ohno!");
+            let new_graph = Node::new(Box::new(graph), mag, new_hash);
+            new_graph.materialize(img_path, &|s| println!("{}", s));
+        }
     }
 }

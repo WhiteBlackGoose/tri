@@ -1,4 +1,4 @@
-use std::{process::Command, fmt::Display};
+use std::{process::Command, fmt::Display, path::Path};
 
 #[derive(Clone)]
 pub struct MagickCommand {
@@ -23,7 +23,7 @@ impl Display for MagickCommand {
     }
 }
 
-pub fn magick<TLog>(from: &str, to: &str, mc: &MagickCommand, log: &TLog) where TLog : Fn(&str) {
+pub fn magick<TLog>(from: &str, to: &str, mc: &MagickCommand, log: &TLog) -> crate::hash::Hash where TLog : Fn(&str) {
     let mut cmd = Command::new("convert");
     let mut str_to_log = String::from("Running command: convert ");
     cmd.arg(from);
@@ -35,5 +35,6 @@ pub fn magick<TLog>(from: &str, to: &str, mc: &MagickCommand, log: &TLog) where 
     cmd.arg(to);
     str_to_log.push_str(format!("{to} ").as_str());
     log(str_to_log.as_str());
-    cmd.output().expect("Ohno");
+    cmd.output().expect("ohno");
+    crate::hash::Hash::new(Path::new(to))
 }
