@@ -9,3 +9,4 @@ edition = "2021"
 sha256 = "1.1.2"
 csv = "*"
 clap = { version = "4.2.4", features = ["derive", "cargo"] }
+colored = "2.0.0"

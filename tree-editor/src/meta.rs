@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::{path::Path, vec, fs::File, io::Write};
 use std::io::Lines;
+use colored::Colorize;
 
 use crate::{hash::Hash, magick::MagickCommand};
 
@@ -93,6 +94,15 @@ pub fn init_meta(path: &Path, hash: &Hash) {
     out.flush().unwrap();
 }
 
+const COMMIT_COLORS: [(u8, u8, u8); 6] = [
+(0xFF, 0x1E, 0x26),
+(0xFE, 0x94, 0x1E),
+(0xFF, 0xFF, 0x00),
+(0x06, 0xBD, 0x00),
+(0x00, 0x1A, 0x98),
+(0x76, 0x00, 0x88),
+];
+
 pub fn meta_visualize(meta: &Meta) {
     let mut mentioned: HashSet<Hash> = HashSet::new();
     fn vis(mentioned: &mut HashSet<Hash>, line: &Line, meta: &Meta, depth: u32) {
@@ -102,15 +112,17 @@ pub fn meta_visualize(meta: &Meta) {
         mentioned.insert(line.commit);
         print!("{}", str::repeat("  ", depth as usize).as_str());
         let hash_str = format!("{}", line.commit);
-        print!("{}", &hash_str[..6]);
+        let color = COMMIT_COLORS[depth as usize % COMMIT_COLORS.len()];
+        print!("{}", &hash_str[..6].truecolor(color.0, color.1, color.2));
         if line.command.is_some() {
-            print!(" {}", line.command.clone().unwrap());
+            print!(" {}", format!("{}", line.command.clone().unwrap()).as_str().truecolor(127, 127, 127));
         }
         if line.kind == CommitKind::HEAD {
             print!(" (HEAD)");
         }
         println!();
-        for child in meta.iter().filter(|child| match child.parent { None => false, Some(par) => par.eq(&line.commit) } ) {
+        let children = meta.iter().filter(|child| match child.parent { None => false, Some(par) => par.eq(&line.commit) } ).collect::<Vec<_>>();
+        for child in children {
             vis(mentioned, &child, meta, depth + 1);
         }
     }
