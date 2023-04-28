@@ -148,3 +148,23 @@ pub fn meta_visualize(meta: &Meta) {
     let root = meta.iter().filter(|line| line.parent.is_none()).next().unwrap();
     vis(&mut mentioned, root, meta, 0, " ");
 }
+
+pub fn behead_meta(meta: &mut Meta) {
+    for line in meta {
+        if line.kind == CommitKind::HEAD {
+            line.kind = CommitKind::Normal;
+        }
+    }
+}
+
+pub fn meta_find_line(meta: &Meta, query: &str) -> Option<usize> {
+    let mut found_substrings = meta.iter()
+        .enumerate()
+        .filter(|line| format!("{}", line.1.commit).find(query) == Some(0));
+
+    let first = found_substrings.next();
+    if first.is_none() { return None; }
+    let second = found_substrings.next();
+    if second.is_some() { return None; }
+    Some(first.unwrap().0)
+}
