@@ -4,7 +4,7 @@ mod meta;
 mod tree;
 use std::{path::{PathBuf, Path}, fs, thread::panicking, hash::Hash};
 
-use clap::{arg, command, value_parser, ArgAction, Command};
+use clap::{arg, command, value_parser, ArgAction, Command, ArgMatches};
 use tree::read_graph;
 
 use crate::{meta::init_meta, tree::Node};
@@ -35,7 +35,9 @@ fn main() {
             Command::new("log")
                 .about("Print history of changes from HEAD to the Root")
         )
-        .get_matches();
+        // .get_matches();
+        .get_matches_from(vec!["", "log"]);
+
 
     if let Some(matches) = matches.subcommand_matches("init") {
         println!("Initializing the repo...");
@@ -51,7 +53,7 @@ fn main() {
         panic!("Path to image not provided!");
     }
 
-    if let Some(matches) = matches.subcommand_matches("log") {
+    if let Some(_) = matches.subcommand_matches("log") {
         let graph = read_graph(metafile_path).unwrap();
         println!("Latest commits are at the top");
         fn crawl_graph(graph: &Node) {
@@ -63,5 +65,10 @@ fn main() {
                 }
             }
         }
+        crawl_graph(&graph);
+    }
+
+    if let Some(matches) = matches.subcommand_matches("commit") {
+        let graph = read_graph(metafile_path).unwrap();
     }
 }

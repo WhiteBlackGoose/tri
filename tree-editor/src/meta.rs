@@ -31,7 +31,7 @@ pub fn read_meta(path: &Path) -> Vec<Line> {
     // TODO: Expect message
     let mut rdr = csv::Reader::from_path(path).expect("Problem");
     let mut res: Vec<Line> = vec![];
-    for line in rdr.records().skip(1) {
+    for line in rdr.records() {
         // TODO: Expect message
         let line = line.expect("ohno");
         let mut iter = line.iter();
