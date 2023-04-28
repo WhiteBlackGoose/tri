@@ -56,7 +56,7 @@ fn main() {
                     .about("Visualizes the tree of commits")
             )
             // .get_matches();
-    // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-rotate", "60"]);
+    // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-rotate", "15"]);
     // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-crop", "100x200+0x0"]);
     // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-monochrome"]);
     // .get_matches_from(vec!["", "log"]);
