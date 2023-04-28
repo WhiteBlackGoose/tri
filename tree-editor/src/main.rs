@@ -50,9 +50,11 @@ fn main() {
                 Command::new("log")
                     .about("Print history of changes from HEAD to the Root")
             )
-            // .get_matches();
-    .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-rotate", "60"]);
+            .get_matches();
+    // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-rotate", "60"]);
     // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-crop", "100x200+0x0"]);
+    // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-monochrome"]);
+    // .get_matches_from(vec!["", "log"]);
     // .get_matches_from(vec!["", "init", "--path", "../meme-example.png"]);
 
 
@@ -98,6 +100,10 @@ fn main() {
                 &mag,
                 &|s| println!("{}", s));
             fs::rename(Path::new(INTER_STEPS_PATH).join("tmp"), Path::new(INTER_STEPS_PATH).join(format!("{}", new_hash))).expect("Ohno!");
+            if hash.eq(&new_hash) {
+                println!("Nothing changed");
+                return;
+            }
             let new_graph = Node::new(Box::new(graph), mag.clone(), new_hash);
             new_graph.materialize(img_path, &|s| println!("{}", s));
 

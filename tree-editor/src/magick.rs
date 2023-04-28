@@ -16,10 +16,8 @@ impl MagickCommand {
 
 impl Display for MagickCommand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for arg in &self.args {
-            f.write_str(arg.as_str()).unwrap();
-            f.write_str(" ").unwrap();
-        }
+        let str: Vec<&str> = self.args.iter().map(|s| s.as_str()).collect();
+        f.write_str(str.join(" ").as_str()).unwrap();
         std::fmt::Result::Ok(())
     }
 }
