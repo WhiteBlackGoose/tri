@@ -3,7 +3,7 @@ use std::path::Path;
 
 use crate::hash::Hash;
 use crate::magick::{MagickCommand, self};
-use crate::meta::{CommitKind, read_meta, Line};
+use crate::meta::{CommitKind, read_meta, Line, Meta};
 
 pub const INTER_STEPS_PATH: &str = "inter";
 
@@ -86,16 +86,15 @@ fn collect_nodes(hash: &Hash, lines: &Vec<crate::meta::Line>) -> Result<Node, St
     }
 }
 
-pub fn read_graph(path: &Path) -> Result<Node, String> {
-    let lines = read_meta(path);
-    let mut head_found = lines.iter().filter(|line| line.kind == CommitKind::HEAD);
+pub fn read_graph(meta: &Meta) -> Result<Node, String> {
+    let mut head_found = meta.iter().filter(|line| line.kind == CommitKind::HEAD);
     if head_found.clone().count() != 1 {
         return Err(String::from(format!("HEAD should only be 1, not {}", head_found.clone().count())))
     }
     let head = head_found.next().ok_or_else(|| "Ohno")?;
     if let Some(par) = head.parent {
         Ok(Node::new(
-                   Box::new(collect_nodes(&par, &lines)?),
+                   Box::new(collect_nodes(&par, &meta)?),
                    // TODO: expect message
                    head.command.clone().expect("ohno"),
                    head.commit))

@@ -5,6 +5,7 @@ use sha256::{self, digest, digest_file, try_digest};
 type Sha256 = [u8; 32];
 
 #[derive(Clone, Copy)]
+#[derive(Ord, Eq, PartialOrd, PartialEq)]
 pub struct Hash {
     pub sha256: Sha256,
 }

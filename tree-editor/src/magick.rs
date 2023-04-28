@@ -1,6 +1,7 @@
 use std::{process::Command, fmt::Display, path::Path};
 
 #[derive(Clone)]
+#[derive(Ord, Eq, PartialOrd, PartialEq)]
 pub struct MagickCommand {
     pub args: Vec<String>
 }
