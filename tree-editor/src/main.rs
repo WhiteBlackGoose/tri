@@ -3,7 +3,7 @@ mod magick;
 mod meta;
 mod tree;
 
-use std::{path::{PathBuf, Path}, fs, thread::panicking, hash::Hash};
+use std::{path::{PathBuf, Path}, fs, thread::{panicking, self}, hash::Hash, time::Duration};
 
 use clap::{arg, command, value_parser, ArgAction, Command, ArgMatches, Arg};
 use magick::{MagickCommand, magick};
@@ -17,6 +17,8 @@ use crate::meta::CommitKind::{HEAD, Normal};
 use colored::Colorize;
 
 const METAFILE_NAME: &str = "tri-meta";
+
+use notify::{Watcher, RecommendedWatcher, RecursiveMode, Result};
 
 fn main() {
     let metafile_path = Path::new(METAFILE_NAME);
@@ -58,6 +60,10 @@ fn main() {
             )
             .subcommand(
                 Command::new("tree")
+                    .about("Visualizes the tree of commits")
+            )
+            .subcommand(
+                Command::new("tree-watch")
                     .about("Visualizes the tree of commits")
             )
             .subcommand(
@@ -158,6 +164,30 @@ fn main() {
     if let Some(_) = matches.subcommand_matches("tree") {
         let meta = read_meta(metafile_path);
         meta_visualize(&meta);
+    }
+
+    if let Some(_) = matches.subcommand_matches("tree-watch") {
+        let meta = read_meta(metafile_path);
+        meta_visualize(&meta);
+        let mut watcher = notify::recommended_watcher(|res: Result<notify::Event>| {
+            match res {
+                Ok(event) => {
+                    match event.kind {
+                        notify::EventKind::Access(notify::event::AccessKind::Close(_)) => {
+                            print!("{}[2J", 27 as char);
+                            let meta = read_meta(metafile_path);
+                            meta_visualize(&meta);
+                        },
+                        _ => ()
+                    }
+                },
+                Err(e) => println!("watch error: {:?}", e),
+            }
+        }).unwrap();
+        watcher.watch(metafile_path, RecursiveMode::NonRecursive).unwrap();
+        loop {
+            thread::sleep(Duration::from_millis(100));
+        }
     }
 
     if let Some(matches) = matches.subcommand_matches("reset") {
