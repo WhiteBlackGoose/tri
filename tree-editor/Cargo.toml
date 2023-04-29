@@ -11,3 +11,5 @@ csv = "*"
 clap = { version = "4.2.4", features = ["derive", "cargo"] }
 colored = "2.0.0"
 notify = "5.1.0"
+serde_yaml = "0.9.21"
+serde = { version = "1.0.160", features = ["derive"] }

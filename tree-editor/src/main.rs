@@ -2,26 +2,32 @@ mod hash;
 mod magick;
 mod meta;
 mod tree;
+mod config;
 
 use std::{path::{PathBuf, Path}, fs, thread::{panicking, self}, hash::Hash, time::Duration};
 
 use clap::{arg, command, value_parser, ArgAction, Command, ArgMatches, Arg};
+use config::{read_config, ConfigState};
 use magick::{MagickCommand, magick};
 use meta::{meta_visualize, behead_meta, meta_find_line, CommitKind};
 use tree::{read_graph, INTER_STEPS_PATH};
 
-use crate::{meta::init_meta, tree::Node};
+use crate::{meta::init_meta, tree::Node, config::init_config};
 use crate::meta::{Line, read_meta, write_meta};
 use crate::meta::CommitKind::{HEAD, Normal};
 
 use colored::Colorize;
 
 const METAFILE_NAME: &str = "tri-meta";
+const CONFIGFILE_NAME: &str = "tri-config.yaml";
+
+const ERRMSG_NO_IMGPATH_PROVIDED: &str = "No image path provided! Use --path or config file";
 
 use notify::{Watcher, RecommendedWatcher, RecursiveMode, Result};
 
 fn main() {
     let metafile_path = Path::new(METAFILE_NAME);
+    let config_path = Path::new(CONFIGFILE_NAME);
     fn log(s: &str) {
         println!("{}", s)
     }
@@ -50,7 +56,7 @@ fn main() {
                         arg!(
                         -p --path <FILE> "Specify the path to the initial image"
                     )
-                            .required(true)
+                            .required(false)
                             .value_parser(value_parser!(PathBuf))
                     )
             )
@@ -74,7 +80,7 @@ fn main() {
                         arg!(
                         -p --path <FILE> "Specify the path to the initial image"
                         )
-                        .required(true)
+                        .required(false)
                         .value_parser(value_parser!(PathBuf))
                     )
             )
@@ -92,16 +98,20 @@ fn main() {
 
     if let Some(matches) = matches.subcommand_matches("init") {
         println!("Initializing the repo...");
+        let img_path = matches.get_one::<PathBuf>("path").expect(ERRMSG_NO_IMGPATH_PROVIDED);
         if metafile_path.exists() {
-            // TODO: message
-            panic!("Can't init");
-        }
-        if let Some(img_path) = matches.get_one::<PathBuf>("path") {
+            log("Can't initialize meta: file already exists");
+        } else {
             init_meta(metafile_path, &hash::Hash::new(img_path));
-            println!("Initialized");
-            return;
+            log("Meta initialized");
         }
-        panic!("Path to image not provided!");
+        if config_path.exists() {
+            log("Can't initialize config: file already exists");
+        } else {
+            let config = config::Config { img_path: img_path.to_path_buf().into_os_string().into_string().unwrap() };
+            init_config(config_path, &config).unwrap();
+            log("Config initialized");
+        }
     }
 
     if let Some(_) = matches.subcommand_matches("log") {
@@ -137,33 +147,32 @@ fn main() {
             trail[0] = new_cmd;
         }
         let mag = MagickCommand { args: trail };
-        if let Some(img_path) = matches.get_one::<PathBuf>("path") {
-            let hash = graph.materialize(img_path, &log);
-            let new_hash = magick(
-                Path::new(INTER_STEPS_PATH).join(format!("{}", hash)).to_str().unwrap(),
-                Path::new(INTER_STEPS_PATH).join("tmp").to_str().unwrap(),
-                &mag,
-                &log);
-            fs::rename(Path::new(INTER_STEPS_PATH).join("tmp"), Path::new(INTER_STEPS_PATH).join(format!("{}", new_hash))).expect("Ohno!");
-            if hash.eq(&new_hash) {
-                println!("Nothing changed");
-                return;
-            }
-            let new_graph = Node::new(Box::new(graph), mag.clone(), new_hash);
-            new_graph.materialize(img_path, &log);
-
-            behead_meta(&mut meta);
-
-            meta.push(Line {
-                commit: new_hash,
-                parent: Some(hash),
-                command: Some(mag.clone()),
-                kind: HEAD,
-            });
-
-            write_meta(metafile_path, &meta);
-
+        let img_path = get_img_path(matches).expect(ERRMSG_NO_IMGPATH_PROVIDED);
+        let img_path = img_path.as_path();
+        let hash = graph.materialize(img_path, &log);
+        let new_hash = magick(
+            Path::new(INTER_STEPS_PATH).join(format!("{}", hash)).to_str().unwrap(),
+            Path::new(INTER_STEPS_PATH).join("tmp").to_str().unwrap(),
+            &mag,
+            &log);
+        fs::rename(Path::new(INTER_STEPS_PATH).join("tmp"), Path::new(INTER_STEPS_PATH).join(format!("{}", new_hash))).expect("Ohno!");
+        if hash.eq(&new_hash) {
+            println!("Nothing changed");
+            return;
         }
+        let new_graph = Node::new(Box::new(graph), mag.clone(), new_hash);
+        new_graph.materialize(img_path, &log);
+
+        behead_meta(&mut meta);
+
+        meta.push(Line {
+            commit: new_hash,
+            parent: Some(hash),
+            command: Some(mag.clone()),
+            kind: HEAD,
+        });
+
+        write_meta(metafile_path, &meta);
     }
 
     if let Some(_) = matches.subcommand_matches("tree") {
@@ -198,10 +207,10 @@ fn main() {
     if let Some(matches) = matches.subcommand_matches("reset") {
         let mut meta = read_meta(metafile_path);
         if let Some(commit_addr) = matches.get_one::<String>("addr") {
-        if let Some(img_path) = matches.get_one::<PathBuf>("path") {
+            let img_path = get_img_path(matches).expect(ERRMSG_NO_IMGPATH_PROVIDED);
+            let img_path = img_path.as_path();
             let line_id = meta_find_line(&meta, commit_addr)
                 .expect("Either non-existent or ambiguous commit provided!");
-            let img_path = img_path.as_path();
             // let old_hash = graph.materialize(img_path, &log);
             behead_meta(&mut meta);
             meta[line_id].kind = CommitKind::HEAD;
@@ -210,6 +219,17 @@ fn main() {
             write_meta(metafile_path, &meta);
             println!("HEAD reset to {}", new_hash);
         }
-        }
+    }
+}
+
+fn get_img_path(matches: &ArgMatches) -> Option<PathBuf> {
+    let path = matches.get_one::<PathBuf>("path");
+    if path.is_some() {
+        return Some(path.unwrap().clone());
+    }
+    let config = read_config(Path::new(CONFIGFILE_NAME));
+    match config {
+        ConfigState::Some(config) => Option::Some(Path::new(config.img_path.as_str()).to_path_buf()),
+        _ => None
     }
 }
