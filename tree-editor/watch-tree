@@ -1,6 +1,0 @@
-while :
-do
-    clear
-    ./target/debug/tree-editor tree
-    sleep 1
-done

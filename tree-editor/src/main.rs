@@ -130,7 +130,12 @@ fn main() {
     if let Some(matches) = matches.subcommand_matches("commit") {
         let mut meta = read_meta(metafile_path);
         let graph = read_graph(&meta).unwrap();
-        let trail: Vec<_> = matches.get_many::<String>("cmd").unwrap().map(String::from).collect();
+        let mut trail: Vec<_> = matches.get_many::<String>("cmd").unwrap().map(String::from).collect();
+        if trail.len() > 0 && trail[0].find("-") != Some(0) {
+            let mut new_cmd = String::from("-");
+            new_cmd.push_str(trail[0].as_str());
+            trail[0] = new_cmd;
+        }
         let mag = MagickCommand { args: trail };
         if let Some(img_path) = matches.get_one::<PathBuf>("path") {
             let hash = graph.materialize(img_path, &log);
