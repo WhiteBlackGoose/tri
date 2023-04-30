@@ -10,7 +10,7 @@ use clap::{arg, command, value_parser, ArgAction, Command, ArgMatches, Arg};
 use config::{read_config, ConfigState};
 use magick::{MagickCommand, magick};
 use meta::{meta_visualize, behead_meta, meta_find_line, CommitKind};
-use tree::{read_graph, INTER_STEPS_PATH};
+use tree::read_graph;
 
 use crate::{meta::init_meta, tree::Node, config::init_config};
 use crate::meta::{Line, read_meta, write_meta};
@@ -20,6 +20,7 @@ use colored::Colorize;
 
 const METAFILE_NAME: &str = "tri-meta";
 const CONFIGFILE_NAME: &str = "tri-config.yaml";
+const INTER_STEPS_PATH: &str = "tri-cache";
 
 const ERRMSG_NO_IMGPATH_PROVIDED: &str = "No image path provided! Use --path or config file";
 
@@ -28,6 +29,8 @@ use notify::{Watcher, RecommendedWatcher, RecursiveMode, Result};
 fn main() {
     let metafile_path = Path::new(METAFILE_NAME);
     let config_path = Path::new(CONFIGFILE_NAME);
+    let inter_path = Path::new(INTER_STEPS_PATH);
+
     fn log(s: &str) {
         println!("{}", s)
     }
@@ -149,7 +152,7 @@ fn main() {
         let mag = MagickCommand { args: trail };
         let img_path = get_img_path(matches).expect(ERRMSG_NO_IMGPATH_PROVIDED);
         let img_path = img_path.as_path();
-        let hash = graph.materialize(img_path, &log);
+        let hash = graph.materialize(img_path, &log, inter_path);
         let new_hash = magick(
             Path::new(INTER_STEPS_PATH).join(format!("{}", hash)).to_str().unwrap(),
             Path::new(INTER_STEPS_PATH).join("tmp").to_str().unwrap(),
@@ -161,7 +164,7 @@ fn main() {
             return;
         }
         let new_graph = Node::new(Box::new(graph), mag.clone(), new_hash);
-        new_graph.materialize(img_path, &log);
+        new_graph.materialize(img_path, &log, inter_path);
 
         behead_meta(&mut meta);
 
@@ -215,7 +218,7 @@ fn main() {
             behead_meta(&mut meta);
             meta[line_id].kind = CommitKind::HEAD;
             let new_graph = read_graph(&meta).unwrap();
-            let new_hash = new_graph.materialize(img_path, &log);
+            let new_hash = new_graph.materialize(img_path, &log, inter_path);
             write_meta(metafile_path, &meta);
             println!("HEAD reset to {}", new_hash);
         }

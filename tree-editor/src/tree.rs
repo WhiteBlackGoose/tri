@@ -5,8 +5,6 @@ use crate::hash::Hash;
 use crate::magick::{MagickCommand, self};
 use crate::meta::{CommitKind, read_meta, Line, Meta};
 
-pub const INTER_STEPS_PATH: &str = "inter";
-
 pub fn hash_verify(expected: &Hash, actual: &Hash) {
     if !expected.eq(actual) {
         panic!("Expected: {expected}. Actual: {actual}");
@@ -24,35 +22,35 @@ impl Node {
         Node::Commit(prev, cmd, hash)
     }
 
-    fn materialize_inner<TLog>(&self, path: &Path, log: &TLog) -> Hash where TLog: Fn(&str) {
+    fn materialize_inner<TLog>(&self, path: &Path, log: &TLog, inter_path: &Path) -> Hash where TLog: Fn(&str) {
         match self {
             Node::Image(hash) => {
                 log(format!("Image {} initialized!", hash).as_str());
                 let h = Hash::new(path);
                 hash_verify(hash, &h);
-                fs::copy(path, Path::new(INTER_STEPS_PATH).join(format!("{}", hash))).unwrap();
+                fs::copy(path, inter_path.join(format!("{}", hash))).unwrap();
                 hash.clone()
             },
             Node::Commit(prev, action, hash) => {
-                if (Path::new(INTER_STEPS_PATH).join(hash.to_string())).exists() {
+                if (inter_path.join(hash.to_string())).exists() {
                     log(format!("Cache for {} is found, exiting", hash).as_str());
                     return hash.clone();
                 }
-                let prev = prev.materialize_inner(path, log);
-                let out = Path::new(INTER_STEPS_PATH).join("tmp");
+                let prev = prev.materialize_inner(path, log, inter_path);
+                let out = inter_path.join("tmp");
                 let out_path = out.clone().into_os_string().into_string().unwrap();
-                let in_ = Path::new(INTER_STEPS_PATH).join(format!("{}", prev));
+                let in_ = inter_path.join(format!("{}", prev));
                 let in_path = in_.clone().into_os_string().into_string().unwrap();
                 let out_hash = magick::magick(in_path.as_str(), out_path.as_str(), action, log);
                 hash_verify(hash, &out_hash);
-                fs::rename(out_path, Path::new(INTER_STEPS_PATH).join(format!("{}", out_hash))).expect("Ohno!");
+                fs::rename(out_path, inter_path.join(format!("{}", out_hash))).expect("Ohno!");
                 out_hash
             }
         }
     }
 
-    pub fn materialize<TLog>(&self, path: &Path, log: &TLog) -> Hash where TLog: Fn(&str) {
-        let h = self.materialize_inner(path, log);
+    pub fn materialize<TLog>(&self, path: &Path, log: &TLog, inter_path: &Path) -> Hash where TLog: Fn(&str) {
+        let h = self.materialize_inner(path, log, inter_path);
         let out_path = 
             if let Some(ext) = path.extension() {
                 let mut s = String::from("out");
@@ -63,7 +61,7 @@ impl Node {
                 String::from("out")
             };
         log(format!("Returning to path {}", out_path).as_str());
-        fs::copy(Path::new(INTER_STEPS_PATH).join(h.to_string()), out_path).expect("sdfdf");
+        fs::copy(inter_path.join(h.to_string()), out_path).expect("sdfdf");
         h
     }
 }
