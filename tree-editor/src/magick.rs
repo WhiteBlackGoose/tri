@@ -34,6 +34,13 @@ pub fn magick<TLog>(from: &str, to: &str, mc: &MagickCommand, log: &TLog) -> cra
     cmd.arg(to);
     str_to_log.push_str(format!("{to} ").as_str());
     log(str_to_log.as_str());
-    cmd.output().expect("ohno");
-    crate::hash::Hash::new(Path::new(to))
+    let msg = cmd.output().expect("Error running magick");
+    if msg.stderr.len() != 0 {
+        panic!("Magick threw an error: {}", String::from_utf8(msg.stderr.to_vec()).unwrap());
+    }
+    let to_path = Path::new(to);
+    if !to_path.exists() {
+        panic!("No stderr, but destination path from imagemagick still doesn't exist");
+    }
+    crate::hash::Hash::new(to_path)
 }
