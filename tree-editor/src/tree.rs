@@ -50,6 +50,7 @@ impl Node {
     }
 
     pub fn materialize<TLog>(&self, path: &Path, log: &TLog, inter_path: &Path) -> Hash where TLog: Fn(&str) {
+        if !inter_path.exists() { fs::create_dir(inter_path).unwrap(); }
         let h = self.materialize_inner(path, log, inter_path);
         let out_path = 
             if let Some(ext) = path.extension() {
