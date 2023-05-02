@@ -1,4 +1,4 @@
-use std::{process::Command, fmt::Display, path::Path};
+use std::{fmt::Display};
 
 #[derive(Clone)]
 #[derive(Ord, Eq, PartialOrd, PartialEq)]
@@ -20,27 +20,4 @@ impl Display for MagickCommand {
         f.write_str(str.join(" ").as_str()).unwrap();
         std::fmt::Result::Ok(())
     }
-}
-
-pub fn magick<TLog>(from: &str, to: &str, mc: &MagickCommand, log: &TLog) -> crate::hash::Hash where TLog : Fn(&str) {
-    let mut cmd = Command::new("convert");
-    let mut str_to_log = String::from("Running command: convert ");
-    cmd.arg(from);
-    str_to_log.push_str(format!("{from} ").as_str());
-    for arg in &mc.args {
-        cmd.arg(arg);
-        str_to_log.push_str(format!("{arg} ").as_str());
-    }
-    cmd.arg(to);
-    str_to_log.push_str(format!("{to} ").as_str());
-    log(str_to_log.as_str());
-    let msg = cmd.output().expect("Error running magick");
-    if msg.stderr.len() != 0 {
-        panic!("Magick threw an error: {}", String::from_utf8(msg.stderr.to_vec()).unwrap());
-    }
-    let to_path = Path::new(to);
-    if !to_path.exists() {
-        panic!("No stderr, but destination path from imagemagick still doesn't exist");
-    }
-    crate::hash::Hash::new(to_path)
 }

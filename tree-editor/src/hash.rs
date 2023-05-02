@@ -1,24 +1,28 @@
 use std::{path::Path, fmt::{Display, Write}};
 
-use sha256::{self, digest, digest_file, try_digest};
+use sha256::{self};
+
+use crate::error::TRIError;
 
 type Sha256 = [u8; 32];
 
 #[derive(Clone, Copy)]
 #[derive(Ord, Eq, PartialOrd, PartialEq)]
 #[derive(Hash)]
+#[derive(Debug)]
 pub struct Hash {
     pub sha256: Sha256,
 }
 
 impl Hash {
-    pub fn new(path: &Path) -> Hash {
+    pub fn new(path: &Path) -> Result<Hash, TRIError> {
         let mut r: Sha256 = [0; 32];
-        let sha = sha256::try_digest(path).expect("Problems computing hash");
+        let sha = sha256::try_digest(path)
+            .map_err(|_| TRIError::HashFromFileError(path.to_path_buf()))?;
         for i in 0..32 {
             r[i] = sha.as_bytes()[i];
         }
-        Hash { sha256: r }
+        Ok(Hash { sha256: r })
     }
 
     pub fn from_string(sha: &str) -> Hash {

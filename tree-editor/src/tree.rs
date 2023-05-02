@@ -1,13 +1,17 @@
-use std::fs;
+
 use std::path::Path;
 
+use crate::error::{self, TRIError};
 use crate::hash::Hash;
-use crate::magick::{MagickCommand, self};
-use crate::meta::{CommitKind, read_meta, Line, Meta};
+use crate::io::{Logger, IO};
+use crate::magick::{MagickCommand};
+use crate::meta::{CommitKind, Meta};
 
-pub fn hash_verify(expected: &Hash, actual: &Hash) {
+pub fn hash_verify(expected: &Hash, actual: &Hash) -> Result<(), TRIError> {
     if !expected.eq(actual) {
-        panic!("Expected: {expected}. Actual: {actual}");
+        Err(error::TRIError::HashMismatch(*expected, *actual))
+    } else {
+        Ok(())
     }
 }
 
@@ -22,75 +26,66 @@ impl Node {
         Node::Commit(prev, cmd, hash)
     }
 
-    fn materialize_inner<TLog>(&self, path: &Path, log: &TLog, inter_path: &Path) -> Hash where TLog: Fn(&str) {
+    fn materialize_inner<TIO>(&self, path: &Path, logger: &Logger, io: &mut TIO) -> Result<Hash, TRIError>
+        where TIO: crate::io::IO
+        {
         match self {
             Node::Image(hash) => {
-                log(format!("Image {} initialized!", hash).as_str());
-                let h = Hash::new(path);
-                hash_verify(hash, &h);
-                fs::copy(path, inter_path.join(format!("{}", hash))).unwrap();
-                hash.clone()
+                if io.is_materialized(hash) {
+                    logger.info(format!("Cache for {} is found, exiting", hash).as_str());
+                    return Ok(hash.clone());
+                }
+                let h = Hash::new(path)?;
+                hash_verify(hash, &h)?;
+                let _actual_hash = io.materialize(path)?;
+                logger.info(format!("Image {} initialized!", hash).as_str());
+                Ok(hash.clone())
             },
             Node::Commit(prev, action, hash) => {
-                if (inter_path.join(hash.to_string())).exists() {
-                    log(format!("Cache for {} is found, exiting", hash).as_str());
-                    return hash.clone();
+                if io.is_materialized(hash) {
+                    logger.info(format!("Cache for {} is found, exiting", hash).as_str());
+                    return Ok(hash.clone());
                 }
-                let prev = prev.materialize_inner(path, log, inter_path);
-                let out = inter_path.join("tmp");
-                let out_path = out.clone().into_os_string().into_string().unwrap();
-                let in_ = inter_path.join(format!("{}", prev));
-                let in_path = in_.clone().into_os_string().into_string().unwrap();
-                let out_hash = magick::magick(in_path.as_str(), out_path.as_str(), action, log);
-                hash_verify(hash, &out_hash);
-                fs::rename(out_path, inter_path.join(format!("{}", out_hash))).expect("Ohno!");
-                out_hash
+                let prev_hash = prev.materialize_inner(path, logger, io)?;
+                let new_hash = io.materialize_magick(&prev_hash, action)?;
+                hash_verify(hash, &new_hash)?;
+                Ok(new_hash)
             }
         }
     }
 
-    pub fn materialize<TLog>(&self, path: &Path, log: &TLog, inter_path: &Path) -> Hash where TLog: Fn(&str) {
-        if !inter_path.exists() { fs::create_dir(inter_path).unwrap(); }
-        let h = self.materialize_inner(path, log, inter_path);
-        let out_path = 
-            if let Some(ext) = path.extension() {
-                let mut s = String::from("out");
-                s.push('.');
-                s.push_str(ext.to_str().unwrap());
-                s
-            } else {
-                String::from("out")
-            };
-        log(format!("Returning to path {}", out_path).as_str());
-        fs::copy(inter_path.join(h.to_string()), out_path).expect("sdfdf");
-        h
+    pub fn materialize<TIO>(&self, path: &Path, logger: &Logger, io: &mut TIO) -> Result<Hash, TRIError>
+        where TIO: IO {
+        let hash = self.materialize_inner(path, logger, io)?;
+        logger.info("Materializing into out file");
+        io.expose(&hash, path.extension().map(|s| String::from(s.to_str().unwrap())))?;
+        Ok(hash)
     }
 }
 
 
-fn collect_nodes(hash: &Hash, lines: &Vec<crate::meta::Line>) -> Result<Node, String> {
+fn collect_nodes(hash: &Hash, lines: &Vec<crate::meta::Line>) -> Result<Node, TRIError> {
     let mut found = lines.iter().filter(|line| line.commit.eq(hash));
     if found.clone().count() != 1 {
-        return Err(String::from("Oh no!"))
+        return Err(TRIError::GraphHEADNotUnique(found.clone().count()));
     }
     let found = found.next().unwrap();
     match found.parent {
         None => Ok(Node::Image(found.commit)),
         Some(par) => Ok(Node::Commit(
             Box::new(collect_nodes(&par, lines)?), 
-            // TODO: expect message
-            found.command.clone().ok_or_else(|| String::from("No command found"))?,
+            found.command.clone().ok_or(TRIError::GraphNoCommandFound)?,
             found.commit
             ))
     }
 }
 
-pub fn read_graph(meta: &Meta) -> Result<Node, String> {
+pub fn read_graph(meta: &Meta) -> Result<Node, TRIError> {
     let mut head_found = meta.iter().filter(|line| line.kind == CommitKind::HEAD);
     if head_found.clone().count() != 1 {
-        return Err(String::from(format!("HEAD should only be 1, not {}", head_found.clone().count())))
+        return Err(TRIError::GraphHEADNotUnique(head_found.clone().count()));
     }
-    let head = head_found.next().ok_or_else(|| "Ohno")?;
+    let head = head_found.next().unwrap();
     if let Some(par) = head.parent {
         Ok(Node::new(
                    Box::new(collect_nodes(&par, &meta)?),

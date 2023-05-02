@@ -4,3 +4,5 @@ tree-editor/tri-cache
 *.png
 *.jpg
 tree-editor/tri-meta
+tree-editor/tri-config.yaml
+tree-editor/tri-out.jpeg
