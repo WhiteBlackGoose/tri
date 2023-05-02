@@ -7,6 +7,7 @@ in pkgs.mkShell {
     pkgs.rustc
     pkgs.rust-analyzer
     pkgs.vscode-extensions.vadimcn.vscode-lldb
+    pkgs.imagemagick
   ];
   VSCODE_CODELLDB = "${pkgs.vscode-extensions.vadimcn.vscode-lldb}";
 }
