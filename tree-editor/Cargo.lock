@@ -770,7 +770,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tree-editor"
+name = "tri"
 version = "0.1.0"
 dependencies = [
  "chrono",

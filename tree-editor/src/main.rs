@@ -78,6 +78,7 @@ fn main() {
     // .get_matches_from(vec!["", "reset", "0d606f", "--path", "../meme-example.png"]);
     // .get_matches_from(vec!["", "reset", "--help"]);
 
+
     let logger = Logger { };
     let io = RealIO {
         path_meta: PathBuf::from("tri-meta"),
