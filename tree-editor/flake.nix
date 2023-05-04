@@ -31,6 +31,14 @@
           version = "0.0.1";
           src = ./.;
           cargoSha256 = "sha256-3M25zF3TiPAdnmf1rxb+xUdBFEGm/LGVg3Xc1lQn5Pk=";
+          meta = with pkgs.lib; {
+            homepage = "https://github.com/WhiteBlackGoose/tree-imagemagick-editor";
+            description = "Graphic editor with immutable and reproducible changes/transformations, based on imagemagick and inspired by git and nix";
+            platforms = platforms.all;
+            maintainers = with maintainers; [ WhiteBlackGoose ];
+            license = licenses.gpl3Plus;
+            mainProgram = "tree-editor";
+          };
         };
     });
 }
