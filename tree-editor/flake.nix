@@ -37,8 +37,11 @@
           ];
 
           postInstall = ''
-            installManPage tri.1
+            installManPage ./artifacts/tri.1
             installShellCompletion tri.bash
+            installShellCompletion tri.fish
+            installShellCompletion tri.elv
+            installShellCompletion tri.ps1
           '';
 
           # cargoSha256 = "";

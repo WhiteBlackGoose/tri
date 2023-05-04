@@ -37,7 +37,7 @@ fn main() -> std::io::Result<()> {
     if !out_dir.exists() {
         std::fs::create_dir(out_dir).unwrap();
     }
-    generate_autocomplete()?;
-    generate_man_page()?;
+    generate_autocomplete(out_dir)?;
+    generate_man_page(out_dir)?;
     Ok(())
 }
