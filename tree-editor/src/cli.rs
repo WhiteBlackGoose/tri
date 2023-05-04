@@ -1,10 +1,7 @@
-
-
-
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use std::{path::PathBuf};
+use std::path::PathBuf;
 use crate::magick::MagickCommand;
 use crate::tree::{read_graph, Node};
 use crate::{hash::Hash, config};
@@ -12,7 +9,6 @@ use crate::meta::{CommitKind, behead_meta, meta_visualize, meta_find_line};
 
 use colored::Colorize;
 use clap::ArgMatches;
-use notify::Watcher;
 use crate::{io::{IO, Logger}, error::TRIError, meta::{Meta, Line}};
 
 
@@ -147,7 +143,6 @@ pub fn process_matches<TIO>(matches: &ArgMatches, io: TIO, logger: Logger) -> Re
         loop {
             thread::sleep(Duration::from_millis(100));
         }
-        return Ok(());
     }
 
     if let Some(matches) = matches.subcommand_matches("reset") {
@@ -163,7 +158,7 @@ pub fn process_matches<TIO>(matches: &ArgMatches, io: TIO, logger: Logger) -> Re
         meta[line_id].kind = CommitKind::HEAD;
         let new_graph = read_graph(&meta)?;
         let new_hash = new_graph.materialize(img_path, &logger, &mut io)?;
-        io.meta_write(&meta);
+        io.meta_write(&meta)?;
         logger.info(format!("HEAD reset to {}", new_hash).as_str());
         return Ok(());
     }
