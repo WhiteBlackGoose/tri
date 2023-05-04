@@ -4,7 +4,7 @@ use std::{io::Write};
 
 use super::hash::Hash;
 use colored::Colorize;
-use notify::{Watcher};
+use notify::{Watcher, INotifyWatcher};
 
 pub trait IO {
     fn materialize(&mut self, from: &Path) -> Result<Hash, TRIError>;
@@ -20,7 +20,7 @@ pub trait IO {
     fn config_write(&mut self, config: &Config) -> Result<(), TRIError>;
     fn config_read(&mut self) -> Result<Config, TRIError>;
 
-    fn watch_meta<TWatch>(&mut self, watch: TWatch) -> Result<(), TRIError> where TWatch : FnMut(notify::Result<notify::Event>) + Send + 'static;
+    fn watch_meta<TWatch>(&mut self, watch: TWatch) -> Result<INotifyWatcher, TRIError> where TWatch : FnMut(notify::Result<notify::Event>) + Send + 'static;
 }
 
 #[derive(Clone, Copy)]
@@ -230,11 +230,11 @@ impl IO for RealIO {
         }
     }
 
-    fn watch_meta<TWatch>(&mut self, watch: TWatch) -> Result<(), TRIError> where TWatch : FnMut(notify::Result<notify::Event>) + Send + 'static {
+    fn watch_meta<TWatch>(&mut self, watch: TWatch) -> Result<INotifyWatcher, TRIError> where TWatch : FnMut(notify::Result<notify::Event>) + Send + 'static {
         let mut watcher = notify::recommended_watcher(watch)
             .map_err(|_| TRIError::IOWatchFS)?;
         watcher.watch(self.path_meta.as_path(), notify::RecursiveMode::NonRecursive)
             .map_err(|_| TRIError::IOWatchFS)?;
-        Ok(())
+        Ok(watcher)
     }
 }

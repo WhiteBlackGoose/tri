@@ -21,11 +21,6 @@ pub fn process_matches<TIO>(matches: &ArgMatches, io: TIO, logger: Logger) -> Re
     let mut io = io;
     let logger = logger;
 
-    notify::recommended_watcher(|_| println!("Aaa")).unwrap().watch(std::path::Path::new("aaa.txt"), notify::RecursiveMode::NonRecursive).unwrap();
-    loop {
-        thread::sleep(Duration::from_millis(100));
-    }
-
     if let Some(matches) = matches.subcommand_matches("init") {
         println!("Initializing the repo...");
         let img_path = matches.get_one::<PathBuf>("path")
@@ -148,7 +143,7 @@ pub fn process_matches<TIO>(matches: &ArgMatches, io: TIO, logger: Logger) -> Re
             }
         };
         let arc_io_clone = Arc::clone(&arc_io);
-        arc_io_clone.lock().unwrap().watch_meta(watcher)?;
+        let _watcher = arc_io_clone.lock().unwrap().watch_meta(watcher)?;
         loop {
             thread::sleep(Duration::from_millis(100));
         }
