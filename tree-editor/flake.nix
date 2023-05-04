@@ -33,15 +33,14 @@
 
           nativeBuildInputs = [
             pkgs.installShellFiles
-            pkgs.pandoc
           ];
 
+          # TODO: add elvish and powershell
           postInstall = ''
             installManPage ./artifacts/tri.1
-            installShellCompletion tri.bash
-            installShellCompletion tri.fish
-            installShellCompletion tri.elv
-            installShellCompletion tri.ps1
+            installShellCompletion ./artifacts/_tri
+            installShellCompletion ./artifacts/tri.bash
+            installShellCompletion ./artifacts/tri.fish
           '';
 
           # cargoSha256 = "";
