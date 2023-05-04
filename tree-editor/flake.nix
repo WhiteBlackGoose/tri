@@ -37,12 +37,12 @@
           ];
 
           postInstall = ''
-            pandoc --standalone --to man doc/tri.md -o tri.1
             installManPage tri.1
+            installShellCompletion tri.bash
           '';
 
-          # cargoSha256 = "sha256-3M25zF3TiPAdnmf1rxb+xUdBFEGm/LGVg3Xc1lQn5Pk=";
-          cargoSha256 = "sha256-D0HdbOLePCgbaO3kfPPg8NLRvi1XYfOla6/Clnb01xU=";
+          # cargoSha256 = "";
+          cargoSha256 = "sha256-i/uT0q81Fhf8OK0oDI4w3zx5W1zS3shCwVvvK/bOxko=";
           meta = with pkgs.lib; {
             homepage = "https://github.com/WhiteBlackGoose/tree-imagemagick-editor";
             description = "Graphic editor with immutable and reproducible changes/transformations, based on imagemagick and inspired by git and nix";
