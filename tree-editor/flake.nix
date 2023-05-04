@@ -30,7 +30,20 @@
           pname = "tri";
           version = "0.0.1";
           src = ./.;
-          cargoSha256 = "sha256-3M25zF3TiPAdnmf1rxb+xUdBFEGm/LGVg3Xc1lQn5Pk=";
+
+          nativeBuildInputs = [
+            pkgs.installShellFiles
+            pkgs.pandoc
+          ];
+
+          postInstall = ''
+            pandoc --standalone --to man doc/tri.md -o tri.1
+            installManPage tri.1
+          '';
+            # installShellCompletion $releaseDir/build/lsd-*/out/{_lsd,lsd.{bash,fish}}
+
+          # cargoSha256 = "sha256-3M25zF3TiPAdnmf1rxb+xUdBFEGm/LGVg3Xc1lQn5Pk=";
+          cargoSha256 = "sha256-D0HdbOLePCgbaO3kfPPg8NLRvi1XYfOla6/Clnb01xU=";
           meta = with pkgs.lib; {
             homepage = "https://github.com/WhiteBlackGoose/tree-imagemagick-editor";
             description = "Graphic editor with immutable and reproducible changes/transformations, based on imagemagick and inspired by git and nix";
