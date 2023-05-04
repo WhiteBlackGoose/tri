@@ -40,7 +40,6 @@
             pandoc --standalone --to man doc/tri.md -o tri.1
             installManPage tri.1
           '';
-            # installShellCompletion $releaseDir/build/lsd-*/out/{_lsd,lsd.{bash,fish}}
 
           # cargoSha256 = "sha256-3M25zF3TiPAdnmf1rxb+xUdBFEGm/LGVg3Xc1lQn5Pk=";
           cargoSha256 = "sha256-D0HdbOLePCgbaO3kfPPg8NLRvi1XYfOla6/Clnb01xU=";
