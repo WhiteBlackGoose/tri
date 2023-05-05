@@ -4,7 +4,6 @@ use crate::hash::Hash;
 
 #[derive(Debug)]
 pub enum TRIError {
-    CLIMetaAlreadyExists,
     CLIPathNotProvided,
     HashFromFileError(PathBuf),
     HashMismatch(Hash, Hash),
@@ -16,7 +15,6 @@ pub enum TRIError {
     MagickNotRan,
     MetaInvalidCommitKind(String),
     MetaInvalidLine(csv::Error),
-    MetaReadingError,
     MetaTooFewColumns,
     MetaTooManyColumns,
     ConfigSerializationError,

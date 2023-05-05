@@ -51,7 +51,6 @@ impl Logger {
 
     pub fn tri_error(&self, err: &TRIError) {
         let msg: String = match err {
-            TRIError::CLIMetaAlreadyExists        => format!("Meta file already exists"),
             TRIError::CLIPathNotProvided          => format!("There's no --path or path in config file provided"),
             TRIError::HashFromFileError(file)     => format!("Could not take hash of file {:?}", file),
             TRIError::HashMismatch(exp, act)      => format!("Graph is corrupt: expected {}, actual {}", exp, act),
@@ -62,7 +61,6 @@ impl Logger {
             TRIError::MagickNotRan                => format!("Problem running `convert` executable"),
             TRIError::MetaInvalidCommitKind(st)   => format!("Unexpected commit kind: `{}`", st),
             TRIError::MetaInvalidLine(err)        => format!("Problem reading line in meta: {}", err),
-            TRIError::MetaReadingError            => format!("Problem reading meta file"),
             TRIError::MetaTooFewColumns           => format!("Too few columns in meta (expected: 4)"),
             TRIError::MetaTooManyColumns          => format!("Too many columns in meta (expected: 4)"),
             TRIError::ConfigSerializationError    => format!("Error serializing config"),
