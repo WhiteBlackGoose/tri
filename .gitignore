@@ -1,9 +1,9 @@
-tree-editor/target
-tree-editor/tri-cache
+target
+tri-cache
 /.idea
 *.png
 *.jpg
-tree-editor/tri-meta
-tree-editor/tri-config.yaml
-tree-editor/tri-out.jpeg
-tree-editor/artifacts
+tri-meta
+tri-config.yaml
+tri-out.jpeg
+artifacts
