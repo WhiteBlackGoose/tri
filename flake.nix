@@ -2,17 +2,20 @@
   description = "TRI editor project";
 
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-  inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.fenix = {
     url = "github:nix-community/fenix";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ nixpkgs, flake-utils, fenix, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let pkgs = nixpkgs.legacyPackages.${system}; in 
-      {
-        devShells.default =
+  outputs = { nixpkgs, fenix, ... }:
+      let 
+        systems = [ "aarch64-darwin" "x86_64-darwin" "aarch64-linux" "x86_64-linux" ]; 
+      in {
+        devShells = nixpkgs.lib.genAttrs systems (system: 
+        let 
+          pkgs = nixpkgs.legacyPackages.${system}; in
+        {
+          default =
           pkgs.mkShell {
             buildInputs = [
               pkgs.cargo
@@ -24,8 +27,13 @@
             ];
             VSCODE_CODELLDB = "${pkgs.vscode-extensions.vadimcn.vscode-lldb}";
           };
+        });
 
-        packages.default = (pkgs.makeRustPlatform {
+        packages = nixpkgs.lib.genAttrs systems (system: 
+        let 
+          pkgs = nixpkgs.legacyPackages.${system}; in
+        {
+          default = (nixpkgs.legacyPackages.${system}.pkgs.makeRustPlatform {
           inherit (fenix.packages.${system}.minimal) cargo rustc;
         }).buildRustPackage {
           pname = "tri";
@@ -55,5 +63,6 @@
             mainProgram = "tri";
           };
         };
-    });
+      });
+    };
 }
