@@ -29,14 +29,19 @@ tri tree
 
 ### Most users
 
-Install [nix](https://nixos.org/download.html) (*the* amazing package manager).
+#### 1. Install nix [**Nix official instruction**](https://nixos.org/download.html)
 
-Then run
+#### 2. Run installation
 ```
 nix profile install github:WhiteBlackGoose/tri \
---extra-experimental-features nix-command \
---extra-experimental-features flakes
+--extra-experimental-features 'nix-command flakes'
 ```
+
+#### 3. Enable tab completion
+```
+export XDG_DATA_DIRS="~/.nix-profile/share:$XDG_DATA_DIRS"
+```
+to your `.bashrc` (or your shell's corresponding file).
 
 ### NixOS flake users
 
