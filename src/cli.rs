@@ -42,6 +42,8 @@ pub fn process_matches<TIO>(matches: &ArgMatches, io: TIO, logger: Logger) -> Re
             io.config_write(&config)?;
             logger.info("Config initialized");
         }
+        let graph = read_graph(&io.meta_read()?)?;
+        graph.materialize(img_path, &logger, &mut io)?;
         return Ok(());
     }
 
@@ -162,6 +164,43 @@ pub fn process_matches<TIO>(matches: &ArgMatches, io: TIO, logger: Logger) -> Re
         logger.info(format!("HEAD reset to {}", new_hash).as_str());
         return Ok(());
     }
+
+    if let Some(_) = matches.subcommand_matches("status") {
+        let mut stage = 1;
+        stage += 1; logger.info(format!("Stage {}: Reading meta", stage).as_str());
+        match io.meta_read() {
+            Ok(meta) => {
+                logger.info("Meta file found and valid");
+                match read_graph(&meta) {
+                    Ok(graph) => {
+                        logger.info("Tri commit tree is valid");
+                        match graph {
+                            Node::Image(hash) =>
+                                logger.info(format!("Root node. Hash: {}", hash).as_str()),
+                            Node::Commit(_, cmd, hash) =>
+                                logger.info(format!("Current commit: {}. Command: {}", cmd, hash).as_str())
+                        }
+                    },
+                    Err(err) => logger.tri_error(&err)
+                }
+            },
+            Err(err) => logger.tri_error(&err)
+        }
+
+        stage += 1; logger.info(format!("Stage {}: Reading config", stage).as_str());
+        match io.config_read() {
+            Ok(config) => {
+                logger.info("Config found and valid");
+                logger.info(format!("Default path to the image: {}", config.img_path).as_str());
+            },
+            Err(err) => logger.tri_error(&err)
+        }
+
+        stage += 1; logger.info(format!("Stage {}: Reading caches", stage).as_str());
+        logger.info(format!("{} commits materialized", io.list_materialized().len()).as_str());
+        return Ok(());
+    }
+
     Err(TRIError::CLIDontKnowWhatToDo)
 }
 

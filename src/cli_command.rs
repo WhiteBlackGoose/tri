@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::{Command, command, arg, value_parser, Arg};
+use clap::{Command, command, arg, value_parser, Arg, CommandFactory};
 
 pub fn get_cli_command() -> Command {
     command!()
@@ -54,5 +54,9 @@ pub fn get_cli_command() -> Command {
                     .required(false)
                     .value_parser(value_parser!(PathBuf))
                 )
+        )
+        .subcommand(
+            Command::new("status")
+                .about("Displays the state of the directory in terms of tri repo")
         )
 }

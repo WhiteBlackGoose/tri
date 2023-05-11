@@ -1,4 +1,4 @@
-use std::{process::{Command}, path::{Path, PathBuf}, fs::{self, File}};
+use std::{process::{Command}, path::{Path, PathBuf}, fs::{self, File}, iter::Empty};
 use crate::{magick::MagickCommand, error::TRIError, meta::{Meta, CommitKind}, config::Config};
 use std::{io::Write};
 
@@ -19,6 +19,8 @@ pub trait IO {
     fn config_exists(&mut self) -> bool;
     fn config_write(&mut self, config: &Config) -> Result<(), TRIError>;
     fn config_read(&mut self) -> Result<Config, TRIError>;
+
+    fn list_materialized(&mut self) -> Vec<Hash>;
 
     fn watch_meta<TWatch>(&mut self, watch: TWatch) -> Result<INotifyWatcher, TRIError> where TWatch : FnMut(notify::Result<notify::Event>) + Send + 'static;
 }
@@ -71,6 +73,7 @@ impl Logger {
             TRIError::CLIArgNotProvided(arg)      => format!("CLI argument {} was not supplied", arg),
             TRIError::GraphBadCommitAddr          => format!("Commit was either not found or not unique, try longer prefix and make sure it exists"),
             TRIError::CLIDontKnowWhatToDo         => format!("I don't know what to do"),
+            TRIError::HashFromStringError(s)      => format!("String `{}` is not valid hash", s),
             TRIError::MagickFailure(exit)         => match exit {
                     Some(code) => format!("imagemagick failed to perform, error code: {}", code),
                     None => format!("imagemagick failed without error code (e. g. was terminated)")
@@ -175,12 +178,12 @@ impl IO for RealIO {
         for line in rdr.records() {
             let line = line.map_err(|err| TRIError::MetaInvalidLine(err))?;
             let mut iter = line.iter();
-            let commit = Hash::from_string(iter.next().ok_or(TRIError::MetaTooFewColumns)?);
+            let commit = Hash::from_string(iter.next().ok_or(TRIError::MetaTooFewColumns)?)?;
             let parent_text = iter.next().ok_or(TRIError::MetaTooFewColumns)?;
             let parent = if parent_text.is_empty() {
                 None
             } else {
-                Some(Hash::from_string(parent_text))
+                Some(Hash::from_string(parent_text)?)
             };
             let mt_text = iter.next().ok_or(TRIError::MetaTooFewColumns)?;
             let command = if mt_text.is_empty() {
@@ -234,5 +237,21 @@ impl IO for RealIO {
         watcher.watch(self.path_meta.as_path(), notify::RecursiveMode::NonRecursive)
             .map_err(|_| TRIError::IOWatchFS)?;
         Ok(watcher)
+    }
+
+    fn list_materialized(&mut self) -> Vec<Hash> {
+        if !self.path_inter.exists() {
+            return vec![];
+        }
+        let dir = fs::read_dir(&self.path_inter).unwrap();
+        let mut res = vec![];
+        for entry in dir {
+            let Ok(entry) = entry else {continue; };
+            let filename = entry.file_name();
+            let Some(filename) = filename.to_str() else { continue; };
+            let Ok(hash) = Hash::from_string(filename) else { continue; };
+            res.push(hash);
+        }
+        res
     }
 }

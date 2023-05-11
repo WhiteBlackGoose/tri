@@ -25,13 +25,15 @@ impl Hash {
         Ok(Hash { sha256: r })
     }
 
-    pub fn from_string(sha: &str) -> Hash {
-        assert_eq!(sha.len(), 32);
+    pub fn from_string(sha: &str) -> Result<Hash, TRIError> {
+        if sha.len() != 32 {
+            return Err(TRIError::HashFromStringError(String::from(sha)));
+        }
         let mut r: Sha256 = [0; 32];
         for i in 0..32 {
             r[i] = sha.as_bytes()[i];
         }
-        Hash { sha256: r }
+        Ok(Hash { sha256: r })
     }
 
     pub fn eq(&self, other: &Hash) -> bool {

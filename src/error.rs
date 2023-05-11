@@ -7,6 +7,7 @@ pub enum TRIError {
     CLIPathNotProvided,
     HashFromFileError(PathBuf),
     HashMismatch(Hash, Hash),
+    HashFromStringError(String),
     IOCopyFile(PathBuf, PathBuf),
     IOCreateDir(PathBuf),
     IOReadFile(PathBuf),
