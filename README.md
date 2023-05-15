@@ -1,5 +1,7 @@
 # TRI
 
+[![tests](https://github.com/WhiteBlackGoose/tri/actions/workflows/tests.yml/badge.svg)](https://github.com/WhiteBlackGoose/tri/actions/workflows/tests.yml)
+
 `TRI` is like git but for image manipulation.
 
 ## Usage
