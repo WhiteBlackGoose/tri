@@ -1,4 +1,4 @@
-name: "Validate flake & check formatting"
+name: "Tests"
 
 on:
   pull_request:
@@ -6,6 +6,8 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - README.md
 
 jobs:
   nix-flake-check:
