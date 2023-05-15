@@ -2,12 +2,8 @@
   description = "TRI editor project";
 
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-  inputs.fenix = {
-    url = "github:nix-community/fenix";
-    inputs.nixpkgs.follows = "nixpkgs";
-  };
 
-  outputs = { nixpkgs, fenix, ... }:
+  outputs = { nixpkgs, ... }:
       let 
         systems = [ "aarch64-darwin" "x86_64-darwin" "aarch64-linux" "x86_64-linux" ]; 
       in {
@@ -33,9 +29,7 @@
         let 
           pkgs = nixpkgs.legacyPackages.${system}; in
         {
-          default = (nixpkgs.legacyPackages.${system}.pkgs.makeRustPlatform {
-              inherit (fenix.packages.${system}.minimal) cargo rustc;
-            }).buildRustPackage {
+          default = nixpkgs.legacyPackages.${system}.rustPlatform.buildRustPackage {
             pname = "tri";
             version = "0.0.1";
             src = ./.;
