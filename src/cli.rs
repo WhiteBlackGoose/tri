@@ -168,6 +168,7 @@ pub fn process_matches<TIO>(matches: &ArgMatches, io: TIO, logger: Logger) -> Re
     if let Some(_) = matches.subcommand_matches("status") {
         let mut stage = 1;
         stage += 1; logger.info(format!("Stage {}: Reading meta", stage).as_str());
+        let mut error_count = 0;
         match io.meta_read() {
             Ok(meta) => {
                 logger.info("Meta file found and valid");
@@ -181,10 +182,16 @@ pub fn process_matches<TIO>(matches: &ArgMatches, io: TIO, logger: Logger) -> Re
                                 logger.info(format!("Current commit: {}. Command: {}", cmd, hash).as_str())
                         }
                     },
-                    Err(err) => logger.tri_error(&err)
+                    Err(err) => {
+                        error_count += 1;
+                        logger.tri_error(&err)
+                    }
                 }
             },
-            Err(err) => logger.tri_error(&err)
+            Err(err) => {
+                error_count += 1;
+                logger.tri_error(&err) 
+            }
         }
 
         stage += 1; logger.info(format!("Stage {}: Reading config", stage).as_str());
@@ -193,11 +200,17 @@ pub fn process_matches<TIO>(matches: &ArgMatches, io: TIO, logger: Logger) -> Re
                 logger.info("Config found and valid");
                 logger.info(format!("Default path to the image: {}", config.img_path).as_str());
             },
-            Err(err) => logger.tri_error(&err)
+            Err(err) => {
+                error_count += 1;
+                logger.tri_error(&err) 
+            }
         }
 
         stage += 1; logger.info(format!("Stage {}: Reading caches", stage).as_str());
         logger.info(format!("{} commits materialized", io.list_materialized().len()).as_str());
+        if error_count > 0 {
+            return Err(TRIError::TRIOuterError(error_count));
+        }
         return Ok(());
     }
 

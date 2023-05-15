@@ -40,7 +40,8 @@ fn main() {
     match cli::process_matches(&matches, io, logger) {
         Ok(()) => (),
         Err(err) => {
-            logger.tri_error(&err)
+            logger.tri_error(&err);
+            std::process::exit(1);
         }
     }
 }

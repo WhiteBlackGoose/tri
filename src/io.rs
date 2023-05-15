@@ -74,6 +74,7 @@ impl Logger {
             TRIError::GraphBadCommitAddr          => format!("Commit was either not found or not unique, try longer prefix and make sure it exists"),
             TRIError::CLIDontKnowWhatToDo         => format!("I don't know what to do"),
             TRIError::HashFromStringError(s)      => format!("String `{}` is not valid hash", s),
+            TRIError::TRIOuterError(count)        => format!("Error: {} errors were encountered", count),
             TRIError::MagickFailure(exit)         => match exit {
                     Some(code) => format!("imagemagick failed to perform, error code: {}", code),
                     None => format!("imagemagick failed without error code (e. g. was terminated)")

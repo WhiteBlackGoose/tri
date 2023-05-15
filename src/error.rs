@@ -25,5 +25,6 @@ pub enum TRIError {
     IOWatchFS,
     CLIArgNotProvided(String),
     GraphBadCommitAddr,
-    CLIDontKnowWhatToDo
+    CLIDontKnowWhatToDo,
+    TRIOuterError(i32)
 }
