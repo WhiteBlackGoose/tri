@@ -1,4 +1,7 @@
-use std::{path::Path, fmt::{Display, Write}};
+use std::{
+    fmt::{Display, Write},
+    path::Path,
+};
 
 use sha256::{self};
 
@@ -6,10 +9,7 @@ use crate::error::TRIError;
 
 type Sha256 = [u8; 32];
 
-#[derive(Clone, Copy)]
-#[derive(Ord, Eq, PartialOrd, PartialEq)]
-#[derive(Hash)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Ord, Eq, PartialOrd, PartialEq, Hash, Debug)]
 pub struct Hash {
     pub sha256: Sha256,
 }
@@ -52,5 +52,27 @@ impl Display for Hash {
             f.write_char(c as char).expect("Error");
         }
         Ok(())
+    }
+}
+
+// Write test for this file
+
+#[cfg(test)]
+mod tests {
+    use super::Hash;
+
+    #[test]
+    fn test_hash_from_string() {
+        let h1 = Hash::from_string("01234567890123456789012345678901").unwrap();
+        let h2 = Hash::from_string("01234567890123456789012345678901").unwrap();
+        let h3 = Hash::from_string("01234567890123456789012345678902").unwrap();
+        assert!(h1.eq(&h2));
+        assert!(!h1.eq(&h3));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_panic_hash_from_string() {
+        let h1 = Hash::from_string("too_short").unwrap();
     }
 }
