@@ -1,6 +1,8 @@
 # TRI
 
 [![tests](https://github.com/WhiteBlackGoose/tri/actions/workflows/tests.yml/badge.svg)](https://github.com/WhiteBlackGoose/tri/actions/workflows/tests.yml)
+[![Install via Nix](https://img.shields.io/badge/Install%20via%20Nix-7eb7e2?logo=nixos&style=flat-square&labelColor=4c6eb4&logoColor=white)](https://nixos.org/download.html)
+[![Built with Rust](https://img.shields.io/badge/Built%20with%20Rust-F49300?logo=rust&style=flat-square&labelColor=F74C00&logoColor=white)](https://www.rust-lang.org/)
 
 `TRI` is like git but for image manipulation.
 
