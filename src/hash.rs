@@ -72,7 +72,29 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_panic_hash_from_string() {
-        let h1 = Hash::from_string("too_short").unwrap();
+    fn test_panic_hash_from_short_string() {
+        Hash::from_string("too short").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_panic_hash_from_long_string() {
+        Hash::from_string("This string is longer than 32 characters which is required by SHA256.").unwrap();
+    }
+
+    #[test]
+    fn test_hash_from_file() {
+        let h1 = Hash::new(std::path::Path::new("Cargo.toml")).unwrap();
+        let h2 = Hash::new(std::path::Path::new("Cargo.toml")).unwrap();
+        let h3 = Hash::new(std::path::Path::new("Cargo.lock")).unwrap();
+        assert!(h1.eq(&h2));
+        assert!(!h1.eq(&h3));
+    }
+
+    #[test]
+    fn test_hash_from_image() {
+        let h1 = Hash::new(std::path::Path::new("Phrog.jpeg")).unwrap();
+        let h2 = Hash::new(std::path::Path::new("Phrog.jpeg")).unwrap();
+        assert!(h1.eq(&h2));
     }
 }
