@@ -117,10 +117,10 @@ impl IO for RealIO {
 
     fn materialize_magick(&mut self, from: &Hash, mc: &MagickCommand) -> Result<Hash, TRIError> {
         let mut cmd = Command::new("convert");
-        cmd.arg(self.path_from_hash(from));
         for arg in &mc.args {
             cmd.arg(arg);
         }
+        cmd.arg(self.path_from_hash(from));
         cmd.arg(self.path_tmp());
         match (cmd.output(), cmd.status().map(|st| st.code())) {
             (Ok(_), Ok(Some(0))) => self.materialize(self.path_tmp().as_path()),
