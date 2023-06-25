@@ -19,7 +19,7 @@
               pkgs.rust-analyzer
               pkgs.vscode-extensions.vadimcn.vscode-lldb
               pkgs.imagemagick
-              (pkgs.writeScriptBin "tri" "./target/debug/tri $@")
+              (pkgs.writeScriptBin "tri" "./target/debug/tri \"$@\"")
             ];
             VSCODE_CODELLDB = "${pkgs.vscode-extensions.vadimcn.vscode-lldb}";
           };
