@@ -53,7 +53,7 @@
             '';
 
             # cargoSha256 = "";
-            cargoSha256 = "sha256-i/uT0q81Fhf8OK0oDI4w3zx5W1zS3shCwVvvK/bOxko=";
+            cargoSha256 = "sha256-93VwWVgTkylrmFZz492N2QI3/4Xv4+MFhmfnNFWcHYc=";
             meta = with pkgs.lib; {
               homepage = "https://github.com/WhiteBlackGoose/tree-imagemagick-editor";
               description = "Graphic editor with immutable and reproducible changes/transformations, based on imagemagick and inspired by git and nix";
