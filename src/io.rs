@@ -74,6 +74,7 @@ impl Logger {
             TRIError::GraphBadCommitAddr          => format!("Commit was either not found or not unique, try longer prefix and make sure it exists"),
             TRIError::CLIDontKnowWhatToDo         => format!("I don't know what to do"),
             TRIError::HashFromStringError(s)      => format!("String `{}` is not valid hash", s),
+            TRIError::MagickDecodingError(s)      => format!("Magick command decoding error: unexpected `{}`", s),
             TRIError::MagickFailure(exit)         => match exit {
                     Some(code) => format!("imagemagick failed to perform, error code: {}", code),
                     None => format!("imagemagick failed without error code (e. g. was terminated)")
@@ -122,6 +123,7 @@ impl IO for RealIO {
         }
         cmd.arg(self.path_from_hash(from));
         cmd.arg(self.path_tmp());
+        self.log.info(format!("Running {} {}", cmd.get_program().to_str().unwrap(), cmd.get_args().map(|s| format!("\"{}\"", s.to_str().unwrap())).collect::<Vec<String>>().join(" ")).as_str());
         match (cmd.output(), cmd.status().map(|st| st.code())) {
             (Ok(_), Ok(Some(0))) => self.materialize(self.path_tmp().as_path()),
             (Ok(_out), Ok(exit)) => Err(TRIError::MagickFailure(exit)),
@@ -158,7 +160,7 @@ impl IO for RealIO {
                 None => write!(out, ",").map_err(|_| TRIError::IOWriteFile(self.path_meta.clone()))?
             }
             match &line.command {
-                Some(command) => write!(out, "{},", command).map_err(|_| TRIError::IOWriteFile(self.path_meta.clone()))?,
+                Some(command) => write!(out, "{},", MagickCommand::encode(command)).map_err(|_| TRIError::IOWriteFile(self.path_meta.clone()))?,
                 None => write!(out, ",").map_err(|_| TRIError::IOWriteFile(self.path_meta.clone()))?
             }
             match &line.kind {
@@ -189,7 +191,7 @@ impl IO for RealIO {
             let command = if mt_text.is_empty() {
                 None
             } else {
-                Some(MagickCommand::from_string(mt_text))
+                Some(MagickCommand::decode(mt_text)?)
             };
             let kind = CommitKind::from_string(iter.next().ok_or(TRIError::MetaTooFewColumns)?)?;
             if iter.next().is_some() { return Err(TRIError::MetaTooManyColumns); }

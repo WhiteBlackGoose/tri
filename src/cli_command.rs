@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, fmt::Display};
 
 use clap::{Command, command, arg, value_parser, Arg, CommandFactory};
 
