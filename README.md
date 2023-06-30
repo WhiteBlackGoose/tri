@@ -63,7 +63,19 @@ modules = [
 }
 ...
 ```
+## Documentation
 
+If you run Nix, you can simply call
+
+```
+man tri
+```
+
+If you do not run Nix on Linux, you can see the man-page manually by calling the following command in the project folder after you built the project (using cargo build):
+
+```
+man ./artifacts/tri.1
+```
 
 ## Contributing
 
