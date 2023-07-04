@@ -55,14 +55,13 @@ tri-input.url = "github:WhiteBlackGoose/tri";
 ```
 Then you can add it as module:
 ```nix
-modules = [
-{
-  environment.systemPackages = [
-    tri-input.packages.${system}.default
-  ];
-}
-...
+{ environment.systemPackages = [ tri-input.packages.${system}.default ]; }
 ```
+
+### Manual installation
+
+You will need Rust, imagemagick. Build the repo, and optionally install man pages and shell completions from ./artifacts.
+
 ## Documentation
 
 If you run Nix, you can simply call
@@ -77,17 +76,4 @@ If you do not run Nix on Linux, you can see the man-page manually by calling the
 man ./artifacts/tri.1
 ```
 
-## Contributing
-
-To start developing this project, get `nix` package manager and run
-```
-nix develop
-```
-In the root of the repo.
-
-To try out the app, run
-```
-nix shell
-```
-
-Shell completion is only available for 
+Or refer to [web version](https://whiteblackgoose.github.io/tri/).
