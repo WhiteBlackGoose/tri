@@ -1,0 +1,26 @@
+name: "Docs"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - README.md
+
+jobs:
+  run-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
+        cargo build
+        mkdir out
+        sudo apt install groff -y
+        cat ./artifacts/tri.1 | groff -mandoc -Thtml > out/index.html
+        
+    - uses: JamesIves/github-pages-deploy-action@4.1.4
+      name: gh-pages publish
+      with:
+        branch: gh-pages
+        folder: out
