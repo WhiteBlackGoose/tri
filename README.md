@@ -11,9 +11,13 @@ First, initialize the repo.
 tri init --path image.png
 ```
 
-Now you can make commits, e. g.:
+Now you can make commits using any ImageMagick command, e. g.:
 ```
 tri commit crop 50x50+0x0
+
+tri commit monochrome
+
+tri commit rotate 90
 ```
 
 Check logs:
@@ -25,6 +29,13 @@ Print commit tree:
 ```
 tri tree
 ```
+
+Reset the HEAD to another commit by specifying the unique first few characters of the hash (run tri tree or log to see the hashes):
+```
+tri reset 9f
+```
+
+
 
 
 ## Installation
