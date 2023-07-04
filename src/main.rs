@@ -1,3 +1,4 @@
+mod test_utility;
 mod hash;
 mod magick;
 mod meta;
