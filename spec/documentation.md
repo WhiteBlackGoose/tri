@@ -6,6 +6,8 @@ TRI was heavily inspired by git and uses the same terminology for its CLI. The g
 
 ## Structure
 
+The structure of the project is split into a lot of files, each providing its own functionality according to its name. The core functionality of the tool is provided in the tree.rs, hash.rs and io.rs files.
+
 
 ## External Frameworks
 
