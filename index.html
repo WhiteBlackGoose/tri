@@ -1,0 +1,134 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Tue Jul  4 13:15:43 2023 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>tri</title>
+
+</head>
+<body>
+
+<h1 align="center">tri</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#SUBCOMMANDS">SUBCOMMANDS</a><br>
+<a href="#VERSION">VERSION</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">tri - CLI tool
+to manipulate images, preserving the history of changes.
+Like git, but for images. Powered by imagemagick.</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>tri</b>
+[<b>-h</b>|<b>--help</b>] [<b>-V</b>|<b>--version</b>]
+[<i>subcommands</i>]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">CLI tool to
+manipulate images, preserving the history of changes. Like
+git, but for images. Powered by imagemagick.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>-h</b>,
+<b>--help</b></p>
+
+<p style="margin-left:22%;">Print help</p>
+
+<p style="margin-left:11%;"><b>-V</b>, <b>--version</b></p>
+
+<p style="margin-left:22%;">Print version</p>
+
+<h2>SUBCOMMANDS
+<a name="SUBCOMMANDS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">tri-init(1)</p>
+
+<p style="margin-left:22%;">Initialize the TRI metafile in
+the current folder. Will create files starting with
+&rsquo;tri-&rsquo;.</p>
+
+<p style="margin-left:11%;">tri-commit(1)</p>
+
+<p style="margin-left:22%;">Make a commit based on the
+current one and bump HEAD to it.</p>
+
+<p style="margin-left:11%;">tri-log(1)</p>
+
+<p style="margin-left:22%;">Print history of changes from
+HEAD to the Root. The ones on the top are the most recent
+one. The last line corresponds to root (initial image) and
+doesn't have commands.</p>
+
+<p style="margin-left:11%;">tri-tree(1)</p>
+
+<p style="margin-left:22%;">Visualizes the tree of
+commits</p>
+
+<p style="margin-left:11%;">tri-tree-watch(1)</p>
+
+<p style="margin-left:22%;">Visualizes the tree of commits
+interactively. Recommended use: open another terminal, run
+this command there, and in your first terminal, keep
+performing commits. The displayed tree will automatically
+update as you make commits.</p>
+
+<p style="margin-left:11%;">tri-reset(1)</p>
+
+<p style="margin-left:22%;">Reset HEAD to another commit
+and regenerate the output file.</p>
+
+<p style="margin-left:11%;">tri-status(1)</p>
+
+<p style="margin-left:22%;">Displays the state of the
+directory in terms of tri repo</p>
+
+<p style="margin-left:11%;">tri-help(1)</p>
+
+<p style="margin-left:22%;">Print this message or the help
+of the given subcommand(s)</p>
+
+<h2>VERSION
+<a name="VERSION"></a>
+</h2>
+
+ 
+<p style="margin-left:11%; margin-top: 1em">v0.1.0</p>
+<hr>
+</body>
+</html>
