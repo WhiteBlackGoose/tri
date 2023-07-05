@@ -96,3 +96,33 @@ pub fn read_graph(meta: &Meta) -> Result<Node, TRIError> {
         Ok(Node::Image(head.commit))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{hash::Hash, meta::{Meta, CommitKind}, config::Config, io::IO};
+
+    use super::read_graph;
+    use crate::tree::Node::{Commit, Image};
+    use crate::meta::Line;
+    use crate::test_utility::FakeIO;
+
+    #[test]
+    fn test_read_graph() {
+        let mut io = FakeIO {
+            f_is_materialized: true,
+            f_meta_exists: true,
+            f_config_exists: true,
+            f_hash: Hash::from_string("187329fcf591320b1c0df4e6c832d982").unwrap(),
+            f_config: Config { img_path: String::from("quack") },
+            f_meta: vec![
+                Line { commit: Hash::from_string("187329fcf591320b1c0df4e6c832d982").unwrap(), parent: None, command: None, kind: CommitKind::HEAD }
+                ]
+        };
+        let graph = read_graph(&io.meta_read().unwrap());
+        assert!(graph.is_ok());
+        match graph.unwrap() {
+            Commit(_, _, _) => panic!("Expected image"),
+            Image(_) => ()
+        };
+    }
+}
