@@ -4,7 +4,8 @@ use std::{io::Write};
 
 use super::hash::Hash;
 use colored::Colorize;
-use notify::{Watcher, INotifyWatcher};
+#[cfg(not(windows))]
+use notify::{INotifyWatcher, Watcher};
 
 pub trait IO {
     fn materialize(&mut self, from: &Path) -> Result<Hash, TRIError>;
@@ -22,6 +23,7 @@ pub trait IO {
 
     fn list_materialized(&mut self) -> Vec<Hash>;
 
+    #[cfg(not(windows))]
     fn watch_meta<TWatch>(&mut self, watch: TWatch) -> Result<INotifyWatcher, TRIError> where TWatch : FnMut(notify::Result<notify::Event>) + Send + 'static;
 }
 
@@ -70,6 +72,7 @@ impl Logger {
             TRIError::GraphHEADNotUnique(count)   => format!("There must be 1 HEAD, not {}", count),
             TRIError::GraphNoCommandFound         => format!("Commit should have a command"),
             TRIError::IOWatchFS                   => format!("Error watching events of the filesystem"),
+            TRIError::INotifyWatchNotSupported    => format!("It does not work on Windows. Use any supported OS if you want it or implement the port of iNotifyWatcher to Windows."),
             TRIError::CLIArgNotProvided(arg)      => format!("CLI argument {} was not supplied", arg),
             TRIError::GraphBadCommitAddr          => format!("Commit was either not found or not unique, try longer prefix and make sure it exists"),
             TRIError::CLIDontKnowWhatToDo         => format!("I don't know what to do"),
@@ -233,6 +236,7 @@ impl IO for RealIO {
         }
     }
 
+    #[cfg(not(windows))]
     fn watch_meta<TWatch>(&mut self, watch: TWatch) -> Result<INotifyWatcher, TRIError> where TWatch : FnMut(notify::Result<notify::Event>) + Send + 'static {
         let mut watcher = notify::recommended_watcher(watch)
             .map_err(|_| TRIError::IOWatchFS)?;

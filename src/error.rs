@@ -27,4 +27,5 @@ pub enum TRIError {
     GraphBadCommitAddr,
     CLIDontKnowWhatToDo,
     MagickDecodingError(String),
+    INotifyWatchNotSupported,
 }

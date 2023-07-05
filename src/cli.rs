@@ -110,7 +110,7 @@ pub fn process_matches<TIO>(matches: &ArgMatches, io: TIO, logger: Logger) -> Re
         meta_visualize(&meta);
         return Ok(());
     }
-
+    #[cfg(not(windows))]
     if let Some(_) = matches.subcommand_matches("tree-watch") {
         let meta = io.meta_read()?;
         meta_visualize(&meta);
@@ -145,6 +145,11 @@ pub fn process_matches<TIO>(matches: &ArgMatches, io: TIO, logger: Logger) -> Re
         loop {
             thread::sleep(Duration::from_millis(100));
         }
+    }
+
+    #[cfg(windows)]
+    if let Some(_) = matches.subcommand_matches("tree-watch") {
+        return Err(TRIError::INotifyWatchNotSupported);
     }
 
     if let Some(matches) = matches.subcommand_matches("reset") {
