@@ -47,6 +47,7 @@ impl IO for FakeIO {
         vec![self.f_hash]
     }
 
+    #[cfg(not(windows))]
     fn watch_meta<TWatch>(&mut self, watch: TWatch) -> Result<notify::INotifyWatcher, crate::error::TRIError> where TWatch : FnMut(notify::Result<notify::Event>) + Send + 'static {
         todo!()
     }
