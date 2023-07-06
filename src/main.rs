@@ -18,16 +18,6 @@ fn main() {
     let matches =
             cli_command::get_cli_command()
             .get_matches();
-    // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-rotate", "15"]);
-    // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-crop", "100x200+0x0"]);
-    // .get_matches_from(vec!["", "commit", "--path", "../meme-example.png", "--", "-monochrome"]);
-    // .get_matches_from(vec!["", "log"]);
-    // .get_matches_from(vec!["", "tree"]);
-    // .get_matches_from(vec!["", "init", "--path", "../meme-example.png"]);
-    // .get_matches_from(vec!["", "reset", "--path", "../meme-example.png", "0d606f"]);
-    // .get_matches_from(vec!["", "reset", "0d606f", "--path", "../meme-example.png"]);
-    // .get_matches_from(vec!["", "reset", "--help"]);
-
 
     let logger = Logger { };
     let io = RealIO {
